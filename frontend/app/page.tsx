@@ -336,17 +336,34 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <img 
-                  src="/images/ASDLogo.png" 
-                  alt="AllShopsDepot Logo" 
-                  className="h-8 w-auto object-contain"
-                />
-                <span className="text-xl font-bold">AllShopsDepot</span>
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-brand-yellow/20 rounded-lg blur-xl"></div>
+                  <img 
+                    src="/images/ASDLogo.png" 
+                    alt="AllShopsDepot Logo" 
+                    className="relative h-12 w-auto object-contain filter brightness-0 invert"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">AllShopsDepot</h3>
+                  <p className="text-sm text-brand-yellow font-medium">Ghana's Hardware Leader</p>
+                </div>
               </div>
-              <p className="text-gray-400">
-                Your trusted partner for professional hardware and tools in Ghana.
+              <p className="text-gray-400 leading-relaxed">
+                Your trusted partner for professional hardware and tools in Ghana. 
+                Quality products, expert service, and nationwide delivery.
               </p>
+              <div className="mt-4 flex items-center space-x-4">
+                <div className="flex items-center text-sm text-gray-300">
+                  <span className="w-2 h-2 bg-brand-yellow rounded-full mr-2"></span>
+                  10,000+ Happy Customers
+                </div>
+                <div className="flex items-center text-sm text-gray-300">
+                  <span className="w-2 h-2 bg-brand-yellow rounded-full mr-2"></span>
+                  5+ Years Experience
+                </div>
+              </div>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Quick Links</h4>
