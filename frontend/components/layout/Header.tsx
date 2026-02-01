@@ -124,10 +124,12 @@ export const Header: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-                <Wrench className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">HardwareHub</span>
+              <img 
+                src="/images/ASDLogo.png" 
+                alt="AllShopsDepot Logo" 
+                className="h-12 w-auto object-contain lg:h-[50px]"
+              />
+              <span className="text-xl font-bold text-gray-900 hidden lg:inline">AllShopsDepot</span>
             </Link>
 
             {/* Desktop Search - Enhanced */}

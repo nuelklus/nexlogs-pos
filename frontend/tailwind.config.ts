@@ -16,6 +16,12 @@ const config: Config = {
           "2xl": "1400px",
         },
       },
+      colors: {
+        brand: {
+          charcoal: '#2D2E2E',
+          yellow: '#FDB813',
+        }
+      }
     },
   },
   plugins: [],
