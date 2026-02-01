@@ -139,9 +139,13 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <Badge className="mb-4 bg-brand-yellow/20 text-brand-charcoal border-brand-yellow">
+              <div className="mb-6 inline-flex items-center px-4 py-2 bg-brand-yellow text-brand-charcoal rounded-full font-semibold text-sm shadow-lg">
+                <span className="relative flex h-2 w-2 mr-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-yellow opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-charcoal"></span>
+                </span>
                 Ghana's Leading Hardware Supplier
-              </Badge>
+              </div>
               <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
                 Professional Hardware
                 <span className="text-brand-yellow"> Tools & Equipment</span>
