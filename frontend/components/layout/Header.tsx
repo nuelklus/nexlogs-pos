@@ -74,37 +74,35 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-6">
               {/* Location Picker */}
               <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-green-600" />
+                <MapPin className="h-4 w-4 text-brand-yellow" />
                 <select className="bg-transparent border-none text-brand-charcoal font-medium focus:outline-none focus:ring-2 focus:ring-brand-yellow rounded px-2 py-1">
                   <option value="tema">Tema Warehouse</option>
                   <option value="accra">Accra Warehouse</option>
                 </select>
                 <span className="text-xs text-gray-500">•</span>
-                <span className="text-xs text-green-600 font-medium">In Stock</span>
+                <span className="text-xs text-brand-yellow font-medium">In Stock</span>
               </div>
               
               <div className="flex items-center text-brand-charcoal">
-                <Phone className="h-4 w-4 mr-1" />
+                <Phone className="h-4 w-4 mr-1 text-brand-yellow" />
                 <span>+233 30 123 4567</span>
               </div>
               
               {/* Delivery Estimator */}
               <div className="flex items-center space-x-2">
-                <Truck className="h-4 w-4 text-blue-600" />
+                <Truck className="h-4 w-4 text-brand-yellow" />
                 <span className="font-medium text-brand-charcoal">Delivery to East Legon by 4 PM</span>
-                <button className="text-xs text-blue-600 hover:text-blue-800 underline">
-                  Change
-                </button>
+                <button className="text-xs text-brand-yellow hover:text-brand-yellow/80 underline">Change</button>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
               <span className="flex items-center text-brand-charcoal">
-                <span className="text-green-600 font-medium">GHS</span>
+                <span className="text-brand-yellow font-medium">GHS</span>
                 <span className="ml-1">Pricing</span>
               </span>
               <span className="flex items-center text-brand-charcoal">
-                <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
+                <CheckCircle className="h-4 w-4 text-brand-yellow mr-1" />
                 <span>Free Delivery over GHS 500</span>
               </span>
               
