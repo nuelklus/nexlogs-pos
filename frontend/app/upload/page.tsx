@@ -33,12 +33,14 @@ export default function UploadPage() {
   // Early return for unauthenticated users
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-md mx-auto text-center">
-            <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h1>
+            <div className="w-16 h-16 bg-brand-yellow/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-8 w-8 text-brand-yellow" />
+            </div>
+            <h1 className="text-2xl font-bold text-brand-charcoal mb-2">Authentication Required</h1>
             <p className="text-gray-600 mb-4">
               You need to be logged in to upload products.
             </p>
@@ -52,26 +54,28 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Header />
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Upload New Product</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl lg:text-4xl font-bold text-brand-charcoal mb-2">Upload New Product</h1>
+          <p className="text-xl text-gray-600">
             Add a new product to your hardware inventory.
           </p>
         </div>
 
         {!isAdmin && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center gap-3">
-              <Shield className="h-5 w-5 text-yellow-600" />
+          <div className="mb-6 p-6 bg-brand-yellow/10 border border-brand-yellow/30 rounded-xl">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-brand-yellow/20 rounded-full flex items-center justify-center">
+                <Shield className="h-6 w-6 text-brand-yellow" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-yellow-800">
+                <p className="text-lg font-semibold text-brand-charcoal">
                   Admin Access Required
                 </p>
-                <p className="text-sm text-yellow-700">
+                <p className="text-gray-600">
                   Only administrators can upload products. Contact your system administrator if you need access.
                 </p>
               </div>
