@@ -70,12 +70,12 @@ export const Header: React.FC = () => {
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4">
           {/* Top Bar - Warehouse Info & Location Picker */}
-          <div className="hidden lg:flex items-center justify-between py-2 text-sm text-gray-600 border-b border-gray-100">
+          <div className="hidden lg:flex items-center justify-between py-2 text-sm text-brand-charcoal border-b border-gray-100">
             <div className="flex items-center space-x-6">
               {/* Location Picker */}
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4 text-green-600" />
-                <select className="bg-transparent border-none text-gray-600 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1">
+                <select className="bg-transparent border-none text-brand-charcoal font-medium focus:outline-none focus:ring-2 focus:ring-brand-yellow rounded px-2 py-1">
                   <option value="tema">Tema Warehouse</option>
                   <option value="accra">Accra Warehouse</option>
                 </select>
@@ -83,7 +83,7 @@ export const Header: React.FC = () => {
                 <span className="text-xs text-green-600 font-medium">In Stock</span>
               </div>
               
-              <div className="flex items-center">
+              <div className="flex items-center text-brand-charcoal">
                 <Phone className="h-4 w-4 mr-1" />
                 <span>+233 30 123 4567</span>
               </div>
@@ -91,7 +91,7 @@ export const Header: React.FC = () => {
               {/* Delivery Estimator */}
               <div className="flex items-center space-x-2">
                 <Truck className="h-4 w-4 text-blue-600" />
-                <span className="font-medium">Delivery to East Legon by 4 PM</span>
+                <span className="font-medium text-brand-charcoal">Delivery to East Legon by 4 PM</span>
                 <button className="text-xs text-blue-600 hover:text-blue-800 underline">
                   Change
                 </button>
@@ -99,11 +99,11 @@ export const Header: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <span className="flex items-center">
+              <span className="flex items-center text-brand-charcoal">
                 <span className="text-green-600 font-medium">GHS</span>
                 <span className="ml-1">Pricing</span>
               </span>
-              <span className="flex items-center">
+              <span className="flex items-center text-brand-charcoal">
                 <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
                 <span>Free Delivery over GHS 500</span>
               </span>
@@ -129,7 +129,6 @@ export const Header: React.FC = () => {
                 alt="AllShopsDepot Logo" 
                 className="h-12 w-auto object-contain lg:h-[50px]"
               />
-              <span className="text-xl font-bold text-gray-900 hidden lg:inline">AllShopsDepot</span>
             </Link>
 
             {/* Desktop Search - Enhanced */}
@@ -138,11 +137,11 @@ export const Header: React.FC = () => {
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   placeholder="Search hardware, tools, SKU (e.g., M12 Bolt, DW-DCD780C2, Sandcrete blocks)..."
-                  className="pl-12 pr-12 h-12 bg-gray-50 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 text-base shadow-sm hover:shadow-md transition-shadow"
+                  className="pl-12 pr-12 h-12 bg-gray-50 border-gray-300 focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow text-brand-charcoal shadow-sm hover:shadow-md transition-shadow"
                   onFocus={() => setIsSearchOpen(true)}
                   readOnly
                 />
-                <kbd className="absolute right-4 top-1/2 transform -translate-y-1/2 px-3 py-1 text-xs bg-gray-100 border border-gray-300 rounded font-mono">
+                <kbd className="absolute right-4 top-1/2 transform -translate-y-1/2 px-3 py-1 text-xs bg-gray-100 border border-gray-300 rounded font-mono text-brand-charcoal">
                   ⌘K
                 </kbd>
                 
@@ -151,16 +150,16 @@ export const Header: React.FC = () => {
                   <div className="p-4">
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Popular Searches</div>
                     <div className="space-y-1">
-                      <div className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded cursor-pointer">
+                      <div className="px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded cursor-pointer">
                         18V Cordless Drill
                       </div>
-                      <div className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded cursor-pointer">
+                      <div className="px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded cursor-pointer">
                         Stainless Steel Pipe
                       </div>
-                      <div className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded cursor-pointer">
+                      <div className="px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded cursor-pointer">
                         M12 Bolts
                       </div>
-                      <div className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded cursor-pointer">
+                      <div className="px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded cursor-pointer">
                         Sandcrete Blocks
                       </div>
                     </div>
@@ -184,7 +183,7 @@ export const Header: React.FC = () => {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3"
+                          className="text-brand-charcoal hover:text-brand-yellow hover:bg-brand-yellow/10 px-3"
                         >
                           <User className="h-5 w-5" />
                           <span className="ml-2 hidden xl:inline">{user?.username}</span>
@@ -195,42 +194,42 @@ export const Header: React.FC = () => {
                       <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                         <div className="p-4">
                           <div className="border-b border-gray-100 pb-3 mb-3">
-                            <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                            <p className="text-sm font-medium text-brand-charcoal">{user?.username}</p>
                             <p className="text-xs text-gray-500">{user?.email}</p>
                             <div className="flex items-center mt-1">
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              <span className="text-xs bg-brand-yellow/20 text-brand-charcoal px-2 py-1 rounded">
                                 {user?.role}
                               </span>
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <Link href="/dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
+                            <Link href="/dashboard" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                               Dashboard
                             </Link>
                             {user?.role === 'ADMIN' && (
                               <>
-                                <Link href="/upload" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
+                                <Link href="/upload" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                                   <Upload className="inline h-3 w-3 mr-1" />
                                   Upload Product
                                 </Link>
-                                <Link href="/test-supabase" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
+                                <Link href="/test-supabase" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                                   🧪 Test Supabase
                                 </Link>
                               </>
                             )}
-                            <Link href="/orders" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
+                            <Link href="/orders" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                               Order History
                             </Link>
-                            <Link href="/profile" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
+                            <Link href="/profile" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                               Account Settings
                             </Link>
-                            <Link href="/wishlist" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
+                            <Link href="/wishlist" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                               Wishlist
                             </Link>
                             <div className="border-t border-gray-100 mt-2 pt-2">
                               <button 
                                 onClick={() => logout().catch(console.error)}
-                                className="block w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
+                                className="block w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded"
                               >
                                 Sign Out
                               </button>
@@ -244,7 +243,7 @@ export const Header: React.FC = () => {
                   <>
                     {/* Sign In Button */}
                     <Link href="/login">
-                      <Button variant="ghost" size="sm" className="text-gray-700 hover:text-blue-600">
+                      <Button variant="ghost" size="sm" className="text-brand-charcoal hover:text-brand-yellow">
                         <User className="h-5 w-5 mr-2" />
                         Sign In
                       </Button>
@@ -257,13 +256,13 @@ export const Header: React.FC = () => {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="relative border-gray-300 hover:border-blue-500 hover:text-blue-600 px-3"
+                    className="relative border-brand-charcoal hover:border-brand-yellow hover:text-brand-yellow hover:bg-brand-yellow/10 px-3"
                   >
                     <ShoppingCart className="h-5 w-5" />
                     {isClient && cartItemCount > 0 && (
                       <Badge 
                         variant="destructive" 
-                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold"
+                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold bg-brand-yellow text-brand-charcoal border-brand-charcoal"
                       >
                         {cartItemCount}
                       </Badge>
@@ -299,7 +298,7 @@ export const Header: React.FC = () => {
                 
                 <div className="flex flex-col space-y-2">
                   <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
+                    <Button variant="ghost" className="w-full justify-start text-brand-charcoal hover:text-brand-yellow hover:bg-brand-yellow/10">
                       Categories
                     </Button>
                   </Link>
@@ -311,7 +310,7 @@ export const Header: React.FC = () => {
                   
                   {isAuthenticated ? (
                     <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">
+                      <Button variant="ghost" className="w-full justify-start text-brand-charcoal hover:text-brand-yellow hover:bg-brand-yellow/10">
                         <User className="h-4 w-4 mr-2" />
                         {user?.username}
                       </Button>
@@ -319,18 +318,18 @@ export const Header: React.FC = () => {
                   ) : (
                     <>
                       <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start">
+                        <Button variant="ghost" className="w-full justify-start text-brand-charcoal hover:text-brand-yellow hover:bg-brand-yellow/10">
                           Sign In
                         </Button>
                       </Link>
                       <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Button className="w-full">Register</Button>
+                        <Button className="w-full bg-brand-yellow hover:bg-brand-yellow/90 text-brand-charcoal font-medium">Register</Button>
                       </Link>
                     </>
                   )}
                   
                   <Link href="/cart" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button variant="outline" className="w-full justify-start border-brand-charcoal hover:border-brand-yellow hover:text-brand-yellow hover:bg-brand-yellow/10">
                       <ShoppingCart className="h-4 w-4 mr-2" />
                       Cart {isClient && cartItemCount > 0 && `(${cartItemCount})`}
                     </Button>
