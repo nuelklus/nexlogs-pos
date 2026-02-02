@@ -8,18 +8,18 @@ import { useEffect } from 'react'
 import { Shield, AlertTriangle } from 'lucide-react'
 
 export default function UploadPage() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, isLoading } = useAuth()
   const router = useRouter()
 
   // Check if user has admin privileges
   const isAdmin = user?.role === 'ADMIN'
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (only after loading is complete)
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       router.push('/login?redirect=/upload')
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isLoading, router])
 
   // Debug: Log user info to help troubleshoot
   useEffect(() => {
@@ -30,7 +30,27 @@ export default function UploadPage() {
     }
   }, [user, isAdmin])
 
-  // Early return for unauthenticated users
+  // Show loading state while auth is initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto text-center">
+            <div className="w-16 h-16 bg-brand-yellow/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-yellow"></div>
+            </div>
+            <h1 className="text-2xl font-bold text-brand-charcoal mb-2">Loading...</h1>
+            <p className="text-gray-600">
+              Checking authentication...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Early return for unauthenticated users (only after loading)
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-white">
