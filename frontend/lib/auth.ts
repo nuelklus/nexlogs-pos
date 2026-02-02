@@ -170,7 +170,7 @@ export const authAPI = {
   },
   
   login: async (data: LoginData): Promise<LoginResponse> => {
-    const response: AxiosResponse<LoginResponse> = await api.post('/api/accounts/login/', data);
+    const response: AxiosResponse<LoginResponse> = await api.post('/accounts/login/', data);
     return response.data;
   },
   
