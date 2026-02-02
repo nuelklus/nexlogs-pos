@@ -61,7 +61,7 @@ export async function uploadProductNew(formData: FormData) {
     }
 
     console.log('🌐 About to call backend API...')
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com'
     console.log('🔗 API URL:', `${apiUrl}/api/products/create/`)
     console.log('🎯 Product data to send:', {
       name: productData.name,

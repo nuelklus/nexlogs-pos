@@ -61,7 +61,7 @@ export async function uploadProductCompleteSimple(formData: FormData) {
     }
 
     console.log('🌐 About to call backend API...')
-    console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/create/`)
+    console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com'}/api/products/create/`)
     console.log('🎯 Product data to send:', {
       name: productData.name,
       price: productData.price,
@@ -71,7 +71,7 @@ export async function uploadProductCompleteSimple(formData: FormData) {
 
     // Call backend API
     console.log('📡 Making fetch request...')
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/create/`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com'}/api/products/create/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

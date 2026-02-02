@@ -103,7 +103,7 @@ export async function uploadProductFinal(formData: FormData) {
 
     // Call backend API
     console.log('🌐 Calling backend API...')
-    const response = await fetch('http://127.0.0.1:8000/api/products/create/', {
+    const response = await fetch('https://hardware-ecommerce-monorepo.onrender.com/api/products/create/', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

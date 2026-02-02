@@ -181,7 +181,7 @@ export async function createProduct(productData: {
       return { success: false, error: 'Authentication required' }
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com'
     console.log('🌐 Calling backend API:', `${apiUrl}/api/products/create/`)
 
     // Call backend API
