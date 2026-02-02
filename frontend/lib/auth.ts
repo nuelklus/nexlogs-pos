@@ -165,7 +165,7 @@ api.interceptors.response.use(
 // API Functions
 export const authAPI = {
   register: async (data: RegisterData): Promise<RegisterResponse> => {
-    const response: AxiosResponse<RegisterResponse> = await api.post('/api/accounts/register/', data);
+    const response: AxiosResponse<RegisterResponse> = await api.post('/accounts/register/', data);
     return response.data;
   },
   
@@ -175,21 +175,21 @@ export const authAPI = {
   },
   
   logout: async (refreshToken: string): Promise<{ message: string }> => {
-    const response: AxiosResponse<{ message: string }> = await api.post('/api/accounts/logout/', {
+    const response: AxiosResponse<{ message: string }> = await api.post('/accounts/logout/', {
       refresh: refreshToken,
     });
     return response.data;
   },
   
   refreshToken: async (refreshToken: string): Promise<AuthTokens> => {
-    const response: AxiosResponse<AuthTokens> = await api.post('/api/accounts/refresh/', {
+    const response: AxiosResponse<AuthTokens> = await api.post('/accounts/refresh/', {
       refresh: refreshToken,
     });
     return response.data;
   },
   
   getProfile: async (): Promise<User> => {
-    const response: AxiosResponse<User> = await api.get('/api/accounts/profile/');
+    const response: AxiosResponse<User> = await api.get('/accounts/profile/');
     return response.data;
   },
 };
@@ -197,7 +197,7 @@ export const authAPI = {
 // Helper function for token refresh
 const refreshToken = async (refreshToken: string): Promise<AuthTokens> => {
   const response: AxiosResponse<AuthTokens> = await axios.post(
-    `${API_BASE_URL}/api/accounts/refresh/`,
+    `${API_BASE_URL}/accounts/refresh/`,
     { refresh: refreshToken }
   );
   return response.data;
