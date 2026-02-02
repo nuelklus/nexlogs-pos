@@ -8,7 +8,7 @@ export async function getCategories() {
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
     console.log('token - token', token)
-    const response = await fetch('http://127.0.0.1:8000/api/products/categories/', {
+    const response = await fetch('https://hardware-ecommerce-monorepo.onrender.com/api/products/categories/', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ export async function getBrands() {
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
 
-    const response = await fetch('http://127.0.0.1:8000/api/products/brands/', {
+    const response = await fetch('https://hardware-ecommerce-monorepo.onrender.com/api/products/brands/', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
