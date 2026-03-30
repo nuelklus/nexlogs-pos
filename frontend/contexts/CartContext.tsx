@@ -123,49 +123,40 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   // Load cart from localStorage on mount (client-side only)
   useEffect(() => {
-    // Only run on client-side
     if (typeof window !== 'undefined') {
       const loadCart = () => {
-        let savedCart = localStorage.getItem('cart');
-        
-        // Fallback to sessionStorage if localStorage is empty
-        if (!savedCart) {
-          savedCart = sessionStorage.getItem('cart');
-          console.log('🛒 Fallback to sessionStorage:', savedCart);
-        }
-        
-        console.log('🛒 Loading cart from storage:', savedCart);
-        if (savedCart) {
-          try {
+        try {
+          const savedCart = localStorage.getItem('cart');
+          if (savedCart) {
             const cartItems = JSON.parse(savedCart);
-            console.log('🛒 Parsed cart items:', cartItems);
             if (Array.isArray(cartItems) && cartItems.length > 0) {
               dispatch({ type: 'LOAD_CART', payload: cartItems });
-              // Save to both storages for redundancy
-              localStorage.setItem('cart', JSON.stringify(cartItems));
-              sessionStorage.setItem('cart', JSON.stringify(cartItems));
             }
-          } catch (error) {
-            console.error('Error loading cart from storage:', error);
-            localStorage.removeItem('cart');
-            sessionStorage.removeItem('cart');
           }
+        } catch (error) {
+          console.error('Error loading cart from storage:', error);
+          localStorage.removeItem('cart');
         }
         setIsLoaded(true);
       };
 
-      // Delay loading to avoid hydration mismatch
-      setTimeout(loadCart, 0);
+      loadCart();
     }
   }, []);
 
-  // Save cart to both localStorage and sessionStorage whenever it changes (client-side only)
+  // Save cart to localStorage with debouncing (client-side only)
   useEffect(() => {
     if (typeof window !== 'undefined' && isLoaded) {
-      console.log('🛒 Saving cart to storage:', state.items);
-      const cartData = JSON.stringify(state.items);
-      localStorage.setItem('cart', cartData);
-      sessionStorage.setItem('cart', cartData);
+      const timeoutId = setTimeout(() => {
+        try {
+          const cartData = JSON.stringify(state.items);
+          localStorage.setItem('cart', cartData);
+        } catch (error) {
+          console.error('Error saving cart to localStorage:', error);
+        }
+      }, 300); // Debounce save operations
+
+      return () => clearTimeout(timeoutId);
     }
   }, [state.items, isLoaded]);
 

@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "apps.products",
     "apps.orders",
     "apps.core",  # Add core app for health checks
+    "apps.admin_dashboard",  # Add admin dashboard app
     "whitenoise",  # Add WhiteNoise for static files
 ]
 
@@ -86,8 +87,9 @@ DATABASES = {
         "PORT": os.getenv("SUPABASE_DB_PORT", "5432"),
         "OPTIONS": {
             "sslmode": "require",
-            "connect_timeout": 10,
+            "connect_timeout": 30,
         },
+        "CONN_MAX_AGE": 60,
     }
 }
 
@@ -221,6 +223,35 @@ CORS_EXPOSE_HEADERS = [
 
 DEFAULT_CURRENCY = os.getenv("DEFAULT_CURRENCY", "GHS")
 DEFAULT_PHONE_COUNTRY_CODE = os.getenv("DEFAULT_PHONE_COUNTRY_CODE", "+233")
+
+# Caching configuration for performance
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+            'CULL_FREQUENCY': 5,
+        }
+    },
+    'products': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'products-cache',
+        'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 500,
+            'CULL_FREQUENCY': 3,
+        }
+    }
+}
+
+# Cache timeout settings (in seconds)
+CACHE_TIMEOUTS = {
+    'products': 300,  # 5 minutes
+    'categories': 1800,  # 30 minutes
+    'brands': 1800,  # 30 minutes
+    'featured_products': 600,  # 10 minutes
+}
 
 # Media files configuration
 MEDIA_URL = '/media/'

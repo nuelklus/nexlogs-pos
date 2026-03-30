@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const registerSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
@@ -26,11 +26,39 @@ interface RegisterFormProps {
   onSuccess?: () => void;
 }
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
+// Register form component that uses useSearchParams
+function RegisterFormContent({ onSuccess }: RegisterFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get redirect URL from search params
+  const redirectTo = searchParams.get('redirect');
+  
+  // Smart redirect logic
+  const getRedirectUrl = (userRole?: string) => {
+    // If explicit redirect parameter provided, use it
+    if (redirectTo && redirectTo !== '/' && !redirectTo.includes('/login') && !redirectTo.includes('/register')) {
+      return redirectTo;
+    }
+    
+    // For CUSTOMER and PRO_CONTRACTOR, try to return to previous page
+    if (userRole === 'CUSTOMER' || userRole === 'PRO_CONTRACTOR') {
+      // Check if there's a previous page in session storage
+      const previousPage = typeof window !== 'undefined' ? sessionStorage.getItem('previousPage') : null;
+      if (previousPage && previousPage !== '/login' && previousPage !== '/register') {
+        return previousPage;
+      }
+      
+      // Default to homepage for customers/contractors if no previous page
+      return '/';
+    }
+    
+    // For other roles (ADMIN, etc.), always redirect to dashboard
+    return '/dashboard';
+  };
 
   const {
     register,
@@ -51,9 +79,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     setError(null);
 
     try {
-      await registerUser(data);
+      const response = await registerUser(data);
       onSuccess?.();
-      router.push('/dashboard');
+      
+      // Use smart redirect logic after successful registration
+      // Get user role from registration response immediately
+      const userRole = response.user.role;
+      const redirectUrl = getRedirectUrl(userRole);
+      router.push(redirectUrl);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
     } finally {
@@ -181,6 +214,29 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         </Button>
       </form>
     </div>
+  );
+};
+
+// Main RegisterForm component with Suspense boundary
+export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
+  return (
+    <Suspense fallback={
+      <div className="w-full py-8 px-6 bg-white shadow-lg rounded-lg">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded mb-4"></div>
+          <div className="space-y-4">
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <RegisterFormContent onSuccess={onSuccess} />
+    </Suspense>
   );
 };
 

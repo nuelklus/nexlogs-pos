@@ -3,7 +3,12 @@ import sys
 
 
 def main() -> None:
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hardware_api.settings.dev")
+    # Use production settings on Render, development locally
+    if os.getenv('RENDER_EXTERNAL_HOSTNAME'):
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hardware_api.settings.prod")
+    else:
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hardware_api.settings.dev")
+    
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

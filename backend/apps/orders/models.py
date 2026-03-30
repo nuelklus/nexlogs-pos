@@ -7,11 +7,17 @@ from apps.products.models import Product
 class Order(models.Model):
     ORDER_STATUS_CHOICES = [
         ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
         ('processing', 'Processing'),
         ('shipped', 'Shipped'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
+    ]
+    
+    ESCROW_STATUS_CHOICES = [
+        ('awaiting_payment', 'Awaiting Payment'),
+        ('held', 'Held'),
+        ('released', 'Released'),
+        ('non_escrow', 'Non-Escrow (COD)'),
     ]
     
     PAYMENT_STATUS_CHOICES = [
@@ -52,6 +58,11 @@ class Order(models.Model):
     # Payment Information
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    
+    # Escrow Information (New Fields)
+    escrow_status = models.CharField(max_length=20, choices=ESCROW_STATUS_CHOICES, default='awaiting_payment')
+    payment_ref = models.TextField(blank=True, null=True, help_text="Payment reference from payment system")
+    release_code = models.TextField(blank=True, null=True, help_text="6-digit release code for delivery confirmation")
     
     # Status
     status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='pending')

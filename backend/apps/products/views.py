@@ -4,9 +4,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db import models
-from django.db.models import Q, Avg, Count
-from django.core.files.storage import default_storage
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Q, Avg, Count, F
+from django.core.cache import cache
 from django.conf import settings
 import os
 import uuid
@@ -22,19 +22,124 @@ class ProductPagination(pagination.PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-class ProductListView(generics.ListAPIView):
-    """List all products with filtering and search"""
-    queryset = Product.objects.filter(is_active=True)
+class PublicProductListView(generics.ListAPIView):
+    """List all active products for public browsing (no authentication required)"""
+    queryset = Product.objects.filter(is_active=True)  # Only active products for public
     serializer_class = ProductListSerializer
     pagination_class = ProductPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'brand', 'condition', 'is_featured']
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description', 'short_description', 'sku', 'brand__name']
     ordering_fields = ['price', 'created_at', 'name', 'stock_quantity']
     ordering = ['-created_at']
+    permission_classes = []  # No authentication required
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Initialize fallback flags
+        self._category_fallback = False
+        self._requested_category = None
+        
+        # Create cache key based on query parameters
+        cache_key = f"products_public_{str(sorted(self.request.query_params.items()))}"
+        
+        # Try to get from cache first
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            print(f"Public API - Cache HIT for key: {cache_key}")
+            return cached_queryset
+        
+        print(f"Public API - Cache MISS for key: {cache_key}")
+        
+        queryset = super().get_queryset()  # Already filtered to active products only
+        
+        # Optimize queries with select_related and prefetch_related
+        queryset = queryset.select_related(
+            'category', 
+            'brand'
+        ).prefetch_related(
+            'images',
+            'specifications'
+        )
+        
+        print(f"Public API - Request query_params: {self.request.query_params}")
+        print(f"Public API - Initial queryset count: {queryset.count()}")
+        
+        # Category filtering by slug (preferred) with fallback to name
+        category = self.request.query_params.get('category')
+        if category:
+            from urllib.parse import unquote
+            # URL decode and normalize for comparison
+            category_param = unquote(category)
+            print(f"Public API - Category parameter: '{category_param}'")
+            
+            # Debug: Show all available categories
+            from apps.products.models import Category
+            all_categories = Category.objects.filter(is_active=True).values('id', 'name', 'slug')
+            print(f"Public API - Available categories: {list(all_categories)}")
+            
+            # Try exact slug match first (preferred)
+            category_queryset = queryset.filter(
+                Q(category__slug=category_param) |
+                Q(category__slug__iexact=category_param)
+            )
+            print(f"Public API - Category queryset count (slug match): {category_queryset.count()}")
+            
+            # If no results with slug, try name matching as fallback
+            if not category_queryset.exists():
+                print("Public API - No slug match found, trying name matching...")
+                # Replace hyphens with spaces for name matching
+                category_name = category_param.replace('-', ' ')
+                print(f"Public API - Category name for fallback: '{category_name}'")
+                category_queryset = Product.objects.filter(
+                    Q(category__name__iexact=category_name) |
+                    Q(category__name__icontains=category_name),
+                    is_active=True  # Ensure only active products
+                )
+                print(f"Public API - Category queryset count (name match): {category_queryset.count()}")
+            
+            # Use filtered category queryset if category filter exists
+            if category_queryset.exists():
+                queryset = category_queryset
+                print(f"Public API - Applied category filter, new queryset count: {queryset.count()}")
+                self._category_fallback = False
+            else:
+                print("Public API - No category products found, keeping original queryset")
+                self._category_fallback = True
+                self._requested_category = category_param
+        
+        # Brand filtering by slug (preferred) with fallback to name
+        brand = self.request.query_params.get('brand')
+        if brand:
+            from urllib.parse import unquote
+            # URL decode and normalize for comparison
+            brand_param = unquote(brand)
+            print(f"Public API - Brand parameter: '{brand_param}'")
+            
+            # Try exact slug match first (preferred)
+            brand_queryset = queryset.filter(
+                Q(brand__slug=brand_param) |
+                Q(brand__slug__iexact=brand_param)
+            )
+            print(f"Public API - Brand queryset count (slug match): {brand_queryset.count()}")
+            
+            # If no results with slug, try name matching as fallback
+            if not brand_queryset.exists():
+                print("Public API - No slug match found, trying name matching...")
+                # Replace hyphens with spaces for name matching
+                brand_name = brand_param.replace('-', ' ')
+                print(f"Public API - Brand name for fallback: '{brand_name}'")
+                brand_queryset = Product.objects.filter(
+                    Q(brand__name__iexact=brand_name) |
+                    Q(brand__name__icontains=brand_name),
+                    is_active=True  # Ensure only active products
+                )
+                print(f"Public API - Brand queryset count (name match): {brand_queryset.count()}")
+            
+            # Use filtered brand queryset if brand filter exists
+            if brand_queryset.exists():
+                queryset = brand_queryset
+                print(f"Public API - Applied brand filter, new queryset count: {queryset.count()}")
+            else:
+                print("Public API - No brand products found, keeping original queryset")
         
         # Stock filtering
         in_stock = self.request.query_params.get('in_stock')
@@ -51,16 +156,173 @@ class ProductListView(generics.ListAPIView):
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
         
-        # Category filtering by slug
-        category_slug = self.request.query_params.get('category_slug')
-        if category_slug:
-            queryset = queryset.filter(category__slug=category_slug)
+        # Search filtering
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(description__icontains=search) |
+                Q(short_description__icontains=search) |
+                Q(sku__icontains=search) |
+                Q(brand__name__icontains=search)
+            )
         
-        # Brand filtering by slug
-        brand_slug = self.request.query_params.get('brand_slug')
-        if brand_slug:
-            queryset = queryset.filter(brand__slug=brand_slug)
+        print(f"Public API - Final queryset count: {queryset.count()}")
         
+        # Cache the result for 5 minutes
+        cache.set(cache_key, queryset, settings.CACHE_TIMEOUTS['products'])
+        
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        """Override list method to add category fallback information"""
+        # Reset fallback flags at the start of each request
+        self._category_fallback = False
+        self._requested_category = None
+        
+        response = super().list(request, *args, **kwargs)
+        
+        # Add category fallback information if it was set in get_queryset
+        if hasattr(self, '_category_fallback') and self._category_fallback:
+            response.data['category_fallback'] = {
+                'occurred': True,
+                'requested_category': self._requested_category,
+                'message': f"No products found in '{self._requested_category}'. Showing all products instead."
+            }
+        
+        return response
+
+class ProductListView(generics.ListAPIView):
+    """List all products with filtering and search (admin only)"""
+    queryset = Product.objects.all()  # Show all products for admin
+    serializer_class = ProductListSerializer
+    pagination_class = ProductPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    # filterset_fields = ['category', 'brand', 'condition', 'is_featured']  # Removed to avoid conflicts
+    search_fields = ['name', 'description', 'short_description', 'sku', 'brand__name']
+    ordering_fields = ['price', 'created_at', 'name', 'stock_quantity']
+    ordering = ['-created_at']
+    permission_classes = [IsAuthenticated]  # Require authentication for admin access
+
+    def get_queryset(self):
+        # For public users, only show active products
+        if not self.request.user.is_authenticated or not self.request.user.is_staff:
+            queryset = Product.objects.filter(is_active=True)
+        else:
+            # For admin users, show all products (including inactive)
+            queryset = Product.objects.all()
+        
+        # Optimize queries with select_related and prefetch_related
+        queryset = queryset.select_related(
+            'category', 
+            'brand'
+        ).prefetch_related(
+            'images',
+            'specifications'
+        )
+        
+        print(f"Request query_params: {self.request.query_params}")
+        print(f"User authenticated: {self.request.user.is_authenticated}")
+        print(f"User is staff: {self.request.user.is_staff}")
+        print(f"Initial queryset count: {queryset.count()}")
+        
+        # Admin-specific filters
+        is_active = self.request.query_params.get('is_active')
+        if is_active == 'true':
+            queryset = queryset.filter(is_active=True)
+        elif is_active == 'false':
+            queryset = queryset.filter(is_active=False)
+        
+        is_featured = self.request.query_params.get('is_featured')
+        if is_featured == 'true':
+            queryset = queryset.filter(is_featured=True)
+        elif is_featured == 'false':
+            queryset = queryset.filter(is_featured=False)
+        
+        # Category filtering by slug (preferred) with fallback to name
+        category = self.request.query_params.get('category')
+        if category:
+            from urllib.parse import unquote
+            # URL decode and normalize for comparison
+            category_param = unquote(category)
+            print(f"Category parameter: '{category_param}'")
+            
+            # Try exact slug match first (preferred)
+            category_queryset = queryset.filter(
+                Q(category__slug=category_param) |
+                Q(category__slug__iexact=category_param)
+            )
+            print(f"Category queryset count (slug match): {category_queryset.count()}")
+            
+            # If no results with slug, try name matching as fallback
+            if not category_queryset.exists():
+                print("No slug match found, trying name matching...")
+                # Replace hyphens with spaces for name matching
+                category_name = category_param.replace('-', ' ')
+                print(f"Category name for fallback: '{category_name}'")
+                category_queryset = Product.objects.filter(
+                    Q(category__name__iexact=category_name) |
+                    Q(category__name__icontains=category_name)
+                )
+                print(f"Category queryset count (name match): {category_queryset.count()}")
+            
+            # Use the filtered category queryset if category filter exists
+            if category_queryset.exists():
+                queryset = category_queryset
+                print(f"Applied category filter, new queryset count: {queryset.count()}")
+            else:
+                print("No category products found, keeping original queryset")
+        
+        # Brand filtering by slug (preferred) with fallback to name
+        brand = self.request.query_params.get('brand')
+        if brand:
+            from urllib.parse import unquote
+            # URL decode and normalize for comparison
+            brand_param = unquote(brand)
+            print(f"Brand parameter: '{brand_param}'")
+            
+            # Try exact slug match first (preferred)
+            brand_queryset = queryset.filter(
+                Q(brand__slug=brand_param) |
+                Q(brand__slug__iexact=brand_param)
+            )
+            print(f"Brand queryset count (slug match): {brand_queryset.count()}")
+            
+            # If no results with slug, try name matching as fallback
+            if not brand_queryset.exists():
+                print("No slug match found, trying name matching...")
+                # Replace hyphens with spaces for name matching
+                brand_name = brand_param.replace('-', ' ')
+                print(f"Brand name for fallback: '{brand_name}'")
+                brand_queryset = Product.objects.filter(
+                    Q(brand__name__iexact=brand_name) |
+                    Q(brand__name__icontains=brand_name)
+                )
+                print(f"Brand queryset count (name match): {brand_queryset.count()}")
+            
+            # Use the filtered brand queryset if brand filter exists
+            if brand_queryset.exists():
+                queryset = brand_queryset
+                print(f"Applied brand filter, new queryset count: {queryset.count()}")
+            else:
+                print("No brand products found, keeping original queryset")
+        
+        # Stock filtering
+        in_stock = self.request.query_params.get('in_stock')
+        if in_stock == 'true':
+            queryset = queryset.filter(
+                Q(track_stock=False) | Q(stock_quantity__gt=0)
+            )
+        
+        # Price range filtering
+        min_price = self.request.query_params.get('min_price')
+        max_price = self.request.query_params.get('max_price')
+        if min_price:
+            queryset = queryset.filter(price__gte=min_price)
+        if max_price:
+            queryset = queryset.filter(price__lte=max_price)
+        
+        print(f"Final queryset count: {queryset.count()}")
         return queryset
 
 class ProductDetailView(generics.RetrieveAPIView):
@@ -74,6 +336,34 @@ class ProductCreateView(generics.CreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductCreateUpdateSerializer
     permission_classes = [IsAdminUser]
+
+class AdminProductUpdateView(generics.UpdateAPIView):
+    """Update product by ID (admin only)"""
+    queryset = Product.objects.all()
+    serializer_class = ProductCreateUpdateSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = 'pk'  # Use primary key (ID)
+    
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        # Clear cache for this product
+        from django.core.cache import cache
+        cache.delete(f'product_{kwargs["pk"]}')
+        return response
+
+
+class AdminProductDeleteView(generics.DestroyAPIView):
+    """Delete product by ID (admin only)"""
+    queryset = Product.objects.all()
+    permission_classes = [IsAdminUser]
+    lookup_field = 'pk'  # Use primary key (ID)
+    
+    def destroy(self, request, *args, **kwargs):
+        # Clear cache for this product
+        from django.core.cache import cache
+        cache.delete(f'product_{kwargs["pk"]}')
+        return super().destroy(request, *args, **kwargs)
+
 
 class ProductUpdateView(generics.UpdateAPIView):
     """Update product (admin only)"""
@@ -292,7 +582,17 @@ def upload_product_image(request):
         
         # Save file
         file_path = default_storage.save(unique_filename, image_file)
-        image_url = default_storage.url(file_path)
+        
+        # Get the public URL - for local storage, we need to construct the full URL
+        if hasattr(default_storage, 'url'):
+            image_url = default_storage.url(file_path)
+        else:
+            # Fallback for local storage
+            image_url = f"http://localhost:8000/media/{file_path}"
+        
+        # Ensure the URL is absolute
+        if not image_url.startswith('http'):
+            image_url = f"http://localhost:8000{image_url}"
         
         return Response({
             'success': True,

@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { 
   ShoppingCart, 
   Package, 
@@ -24,19 +25,16 @@ interface HardwareCardProps {
   className?: string;
 }
 
-export const HardwareCard: React.FC<HardwareCardProps> = ({ 
+export const HardwareCard = memo<HardwareCardProps>(({ 
   product, 
-  onQuickAdd,
   className = ''
 }) => {
   const { addToCart, isInCart } = useCart();
   const [isAdding, setIsAdding] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const [showAdded, setShowAdded] = useState(false);
 
-  const handleQuickAdd = async () => {
+  const handleQuickAdd = useCallback(async () => {
     if (isInCart(product.id)) {
-      // Item already in cart, go to cart page
       window.location.href = '/cart';
       return;
     }
@@ -45,16 +43,13 @@ export const HardwareCard: React.FC<HardwareCardProps> = ({
     try {
       await addToCart(product, 1);
       setShowAdded(true);
-      console.log(`Added ${product.name} to cart`);
-      
-      // Hide added message after 2 seconds
       setTimeout(() => setShowAdded(false), 2000);
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
       setIsAdding(false);
     }
-  };
+  }, [product, isInCart, addToCart]);
 
   const getStockStatusInfo = (status: StockStatus) => {
     switch (status) {
@@ -117,21 +112,12 @@ export const HardwareCard: React.FC<HardwareCardProps> = ({
       {/* Product Image */}
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-50">
         <Link href={`/products/${product.slug}`}>
-          {!imageError && product.image ? (
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-200"
-              onError={() => setImageError(true)}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              unoptimized={product.image.includes('via.placeholder.com')}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100">
-              <Package className="h-12 w-12 text-gray-400" />
-            </div>
-          )}
+          <OptimizedImage
+            src={product.image || ''}
+            alt={product.name}
+            className="object-cover group-hover:scale-105 transition-transform duration-200"
+            priority={false}
+          />
         </Link>
 
         {/* Stock Status Badge */}
@@ -176,10 +162,10 @@ export const HardwareCard: React.FC<HardwareCardProps> = ({
         {/* Brand and Category */}
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
-            {product.brand}
+            {typeof product.brand === 'string' ? product.brand : product.brand.name}
           </span>
           <span className="text-xs text-gray-500">
-            {product.category}
+            {typeof product.category === 'string' ? product.category : product.category.name}
           </span>
         </div>
 
@@ -285,6 +271,8 @@ export const HardwareCard: React.FC<HardwareCardProps> = ({
       )}
     </Card>
   );
-};
+});
+
+HardwareCard.displayName = 'HardwareCard';
 
 export default HardwareCard;

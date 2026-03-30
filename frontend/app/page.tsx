@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
-import { HardwareCard } from '@/components/products/HardwareCard';
 import { Header } from '@/components/layout/Header';
 import { useInitialData } from '@/hooks/useProducts';
 import { 
@@ -20,6 +20,12 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+
+// Lazy load HardwareCard for better performance
+const HardwareCard = dynamic(() => import('@/components/products/HardwareCard').then(mod => ({ default: mod.HardwareCard })), {
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>,
+  ssr: false
+});
 
 // Product interface
 interface Product {
@@ -293,7 +299,7 @@ export default function HomePage() {
               { name: 'Safety Equipment', icon: Shield, count: '120+', color: 'bg-brand-yellow/20 text-brand-charcoal' },
               { name: 'Building Materials', icon: Truck, count: '450+', color: 'bg-brand-yellow/20 text-brand-charcoal' },
             ].map((category) => (
-              <Link key={category.name} href={`/products?category=${category.name.toLowerCase()}`}>
+              <Link key={category.name} href={`/products?category=${category.name.toLowerCase().replace(/\s+/g, '-')}`}>
                 <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 hover:border-brand-yellow">
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${category.color}`}>
                     <category.icon className="h-6 w-6" />

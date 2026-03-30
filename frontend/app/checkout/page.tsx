@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { ordersApi, CreateOrderRequest } from '@/lib/orders-api';
 import {
   ArrowLeft,
@@ -26,6 +27,7 @@ import {
 
 export default function CheckoutPage() {
   const { items, total, itemCount, clearCart } = useCart();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card' | 'mobile_money'>('cod');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
@@ -44,6 +46,40 @@ export default function CheckoutPage() {
 
   const [orderData, setOrderData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Redirect to login if not authenticated (only after auth is loaded)
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      // Store checkout as intended destination
+      sessionStorage.setItem('previousPage', '/checkout');
+      window.location.href = '/login?redirect=/checkout';
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // Pre-fill user info if available
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      setShippingInfo(prev => ({
+        ...prev,
+        email: user.email,
+        firstName: user.username.split(' ')[0] || user.username,
+        lastName: user.username.split(' ').slice(1).join(' ') || '',
+        phone: user.phone_number || prev.phone
+      }));
+    }
+  }, [user, isAuthenticated]);
+
+  // Show loading while checking authentication
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">{authLoading ? 'Checking authentication...' : 'Redirecting to login...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setShippingInfo({
@@ -116,25 +152,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (itemCount === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto text-center py-16">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">No Items in Cart</h1>
-            <p className="text-gray-600 mb-8">Please add items to your cart before checkout.</p>
-            <Link href="/products">
-              <Button size="lg">
-                Continue Shopping
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Show order complete page first
   if (orderComplete) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -200,6 +218,26 @@ export default function CheckoutPage() {
                 <Button variant="outline">Back to Home</Button>
               </Link>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty cart message if no items (and order not complete)
+  if (itemCount === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto text-center py-16">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">No Items in Cart</h1>
+            <p className="text-gray-600 mb-8">Please add items to your cart before checkout.</p>
+            <Link href="/products">
+              <Button size="lg">
+                Continue Shopping
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

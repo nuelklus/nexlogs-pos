@@ -16,13 +16,18 @@ urlpatterns = [
     path('warehouses/', views.warehouses, name='warehouse-list'),
     
     # Product endpoints
-    path('', views.ProductListView.as_view(), name='product-list'),
+    path('public/', views.PublicProductListView.as_view(), name='public-product-list'),
+    path('', views.ProductListView.as_view(), name='product-list'),  # Admin endpoint
     path('featured/', views.featured_products, name='featured-products'),
     path('search/', views.product_search_suggestions, name='search-suggestions'),
     
     # Product management (admin only) - MUST come before slug patterns
     path('create/', views.ProductCreateView.as_view(), name='product-create'),
     path('upload-image/', views.upload_product_image, name='upload-product-image'),
+    
+    # Admin product management by ID
+    path('<int:pk>/update/', views.AdminProductUpdateView.as_view(), name='admin-product-update'),
+    path('<int:pk>/delete/', views.AdminProductDeleteView.as_view(), name='admin-product-delete'),
     
     # Product detail (must come after specific routes)
     path('<slug:slug>/', views.ProductDetailView.as_view(), name='product-detail'),

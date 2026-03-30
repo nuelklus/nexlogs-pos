@@ -1,7 +1,8 @@
 // API configuration
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 // Simple cache implementation
 const cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
@@ -12,36 +13,25 @@ const pendingRequests = new Map<string, Promise<any>>();
 
 // Types for API responses
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   slug: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  category: string;
+  brand: string;
+  rating: number;
+  reviewCount: number;
+  technicalSpecs: {
+    label: string;
+    value: string;
+    type: string;
+  }[];
+  stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
+  warehouse: string;
   sku: string;
-  short_description: string;
-  price: string;
-  compare_price: string | null;
-  discount_percentage: number;
-  image_url: string | null; // New field for Supabase image URL
-  category: {
-    id: number;
-    name: string;
-    slug: string;
-  };
-  brand: {
-    id: number;
-    name: string;
-    slug: string;
-  };
-  primary_image: {
-    id: number;
-    image: string;
-    alt_text: string;
-  } | null; // Keep for backward compatibility
-  stock_status: {
-    status: 'in_stock' | 'low_stock' | 'out_of_stock' | 'available';
-    message: string;
-  };
-  is_featured: boolean;
-  created_at: string;
 }
 
 export interface ProductDetail extends Product {
@@ -125,29 +115,43 @@ export interface Warehouse {
 export interface SearchFilters {
   category?: string;
   priceRange?: [number, number];
-  inStock?: boolean;
-  brand?: string;
-  condition?: string;
-  is_featured?: boolean;
   in_stock?: boolean;
   min_price?: number;
   max_price?: number;
-  page?: number;
-  page_size?: number;
   search?: string;
+  brand?: string;
+  condition?: string;
+  is_featured?: boolean;
   category_slug?: string;
   brand_slug?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface CategoryFallback {
+  occurred: boolean;
+  requested_category: string;
+  message: string;
+}
+
+export interface ProductsResponse {
+  results: Product[];
+  count: number;
+  next: string | null;
+  previous: string | null;
+  category_fallback?: CategoryFallback;
 }
 
 // API Client
 class ApiClient {
   private axiosInstance: AxiosInstance;
+  private debouncedRequests: Map<string, NodeJS.Timeout> = new Map();
 
   constructor() {
     this.axiosInstance = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 15000, // Increased to 15 seconds for development
+      timeout: 30000, // Increased to 30 seconds for development
       headers: {
         'Content-Type': 'application/json',
       },
@@ -197,6 +201,13 @@ class ApiClient {
 
   private getAuthToken(): string | null {
     if (typeof window !== 'undefined') {
+      // Try to get token from cookies first (auth.ts uses cookies)
+      const token = Cookies.get('access_token');
+      if (token) {
+        return token;
+      }
+      
+      // Fallback to localStorage/sessionStorage for backward compatibility
       return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     }
     return null;
@@ -217,11 +228,16 @@ class ApiClient {
   ): Promise<T> {
     const cacheKey = this.getCacheKey(endpoint, options.params);
 
-    // Check cache first
-    const cachedData = this.getFromCache(cacheKey);
-    if (cachedData) {
-      console.log('Cache hit for:', endpoint);
-      return cachedData;
+    // Skip cache for PATCH requests (they should always be fresh)
+    if (options.method?.toUpperCase() === 'PATCH') {
+      console.log('Skipping cache for PATCH request:', endpoint);
+    } else {
+      // Check cache first for GET requests only
+      const cachedData = this.getFromCache(cacheKey);
+      if (cachedData) {
+        console.log('Cache hit for:', endpoint);
+        return cachedData;
+      }
     }
 
     // Check if request is already pending
@@ -243,8 +259,8 @@ class ApiClient {
 
         console.log('Response status:', response.status);
 
-        // Cache successful responses
-        if (response.status === 200) {
+        // Cache successful GET responses only
+        if (response.status === 200 && (!options.method || options.method.toUpperCase() === 'GET')) {
           this.setCache(cacheKey, response.data);
         }
 
@@ -292,6 +308,35 @@ class ApiClient {
     return requestPromise;
   }
 
+  // Debounced search method to reduce API calls
+  debouncedSearch(
+    query: string, 
+    filters: SearchFilters = {}, 
+    delay: number = 300
+  ): Promise<ProductsResponse> {
+    const cacheKey = `search_${query}_${JSON.stringify(filters)}`;
+    
+    // Clear existing timeout for this search
+    if (this.debouncedRequests.has(cacheKey)) {
+      clearTimeout(this.debouncedRequests.get(cacheKey)!);
+    }
+
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(async () => {
+        try {
+          const result = await this.getProducts({ ...filters, search: query });
+          resolve(result);
+          this.debouncedRequests.delete(cacheKey);
+        } catch (error) {
+          reject(error);
+          this.debouncedRequests.delete(cacheKey);
+        }
+      }, delay);
+
+      this.debouncedRequests.set(cacheKey, timeoutId);
+    });
+  }
+
   // Batch endpoint to reduce multiple requests
   async getInitialData(): Promise<{
     featured_products: Product[];
@@ -309,7 +354,7 @@ class ApiClient {
   }
 
   // Product endpoints
-  async getProducts(filters: SearchFilters = {}): Promise<Product[]> {
+  async getProducts(filters: SearchFilters = {}): Promise<ProductsResponse> {
     const params: any = {};
     
     // Set filters
@@ -324,10 +369,12 @@ class ApiClient {
     if (filters.category_slug) params.category_slug = filters.category_slug;
     if (filters.brand_slug) params.brand_slug = filters.brand_slug;
     if (filters.ordering) params.ordering = filters.ordering;
+    if (filters.page) params.page = filters.page.toString();
+    if (filters.page_size) params.page_size = filters.page_size.toString();
 
-    const endpoint = '/products/';
+    const endpoint = '/products/public/';  // Use public endpoint for customer browsing
     
-    return this.request<Product[]>(endpoint, {
+    return this.request<ProductsResponse>(endpoint, {
       method: 'GET',
       params,
     });

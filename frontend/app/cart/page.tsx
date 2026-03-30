@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   ShoppingCart,
   Plus,
@@ -21,7 +22,23 @@ import {
 
 export default function CartPage() {
   const { items, total, itemCount, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  const handleProceedToCheckout = () => {
+    // Don't proceed if auth is still loading
+    if (authLoading) return;
+    
+    if (!isAuthenticated) {
+      // Store current page for smart redirect after login
+      sessionStorage.setItem('previousPage', '/cart');
+      // Redirect to login with checkout as intended destination
+      window.location.href = '/login?redirect=/checkout';
+    } else {
+      // User is authenticated, proceed to checkout
+      window.location.href = '/checkout';
+    }
+  };
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -244,12 +261,14 @@ export default function CartPage() {
                 </div>
 
                 {/* Checkout Button */}
-                <Link href="/checkout">
-                  <Button className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium">
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    Proceed to Checkout
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={handleProceedToCheckout}
+                  disabled={authLoading}
+                  className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+                >
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  {authLoading ? 'Checking...' : (isAuthenticated ? 'Proceed to Checkout' : 'Sign In to Checkout')}
+                </Button>
 
                 {/* Security Note */}
                 <div className="mt-4 text-center">

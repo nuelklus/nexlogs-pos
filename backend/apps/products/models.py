@@ -17,6 +17,10 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = "Categories"
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['slug'], name='categories_slug_idx'),
+            models.Index(fields=['is_active', 'name'], name='categories_active_name_idx'),
+        ]
 
     def __str__(self):
         return self.name
@@ -33,6 +37,10 @@ class Brand(models.Model):
 
     class Meta:
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['slug'], name='brands_slug_idx'),
+            models.Index(fields=['is_active', 'name'], name='brands_active_name_idx'),
+        ]
 
     def __str__(self):
         return self.name
@@ -101,6 +109,17 @@ class Product(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_active', '-created_at'], name='products_active_created_idx'),
+            models.Index(fields=['category', 'is_active'], name='products_category_active_idx'),
+            models.Index(fields=['brand', 'is_active'], name='products_brand_active_idx'),
+            models.Index(fields=['is_featured', 'is_active'], name='products_featured_active_idx'),
+            models.Index(fields=['price'], name='products_price_idx'),
+            models.Index(fields=['stock_quantity'], name='products_stock_idx'),
+            models.Index(fields=['slug'], name='products_slug_idx'),
+            models.Index(fields=['sku'], name='products_sku_idx'),
+            models.Index(fields=['name'], name='products_name_idx'),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.sku})"

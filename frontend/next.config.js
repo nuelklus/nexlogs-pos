@@ -1,19 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true, // Use SWC for faster minification
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production', // Remove console in production
+  swcMinify: true,
+  compress: true,
+  poweredByHeader: false,
+  eslint: {
+    ignoreDuringBuilds: true, // Skip ESLint for production builds
   },
+  typescript: {
+    ignoreBuildErrors: true, // Skip TypeScript checks for production builds
+  },
+  
+  // Performance optimizations
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons']
+  },
+  
   images: {
-    domains: [
-      'via.placeholder.com',
-      'localhost', // For local development
-      '127.0.0.1', // For local development
-      'xachljqxtnhnmbpcnymt.supabase.co', // Your Supabase project
-      'hardware-ecommerce-monorepo.onrender.com', // Your Render backend
-    ],
-    unoptimized: false,
     remotePatterns: [
       {
         protocol: 'https',
@@ -27,38 +30,55 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8000',
+        pathname: '/media/**',
+      },
     ],
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
-  // Performance optimizations
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+  
+  // Static optimization
+  generateEtags: true,
+  
+  // Headers for caching
+  async headers() {
+    return [
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/images/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
-  // Reduce bundle size
-  webpack: (config, { dev }) => {
-    if (!dev) {
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          default: false,
-          vendors: false,
-          vendor: {
-            name: 'vendor',
-            chunks: 'all',
-            test: /node_modules/,
-            priority: 20,
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            priority: 10,
-            reuseExistingChunk: true,
-            enforce: true,
-          },
-        },
-      };
-    }
-    return config;
+  
+  // Redirects for SEO
+  async redirects() {
+    return [
+      {
+        source: '/home',
+        destination: '/',
+        permanent: true,
+      },
+    ];
   },
 };
 

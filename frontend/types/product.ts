@@ -3,18 +3,35 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  category: string;
+  short_description?: string;
+  category: string | { id: string; name: string; slug: string };
   price: number;
   currency: 'GHS';
   image: string; // Single image URL
   slug: string; // Added slug field
-  brand: string;
+  brand: string | { id: string; name: string; slug: string };
   rating: number;
   reviewCount: number;
   technicalSpecs: TechnicalSpec[];
   stockStatus: StockStatus;
   warehouse: Warehouse;
   sku: string;
+  
+  // Admin-specific fields
+  compare_price?: number;
+  cost_price?: number;
+  stock_quantity?: number;
+  low_stock_threshold?: number;
+  weight?: number;
+  dimensions?: string;
+  condition?: string;
+  track_stock?: boolean;
+  is_active?: boolean;
+  is_featured?: boolean;
+  is_digital?: boolean;
+  category_id?: string;
+  brand_id?: string;
+  image_url?: string;
 }
 
 export interface ProductImage {

@@ -56,7 +56,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'sku', 'short_description',
             'price', 'compare_price', 'discount_percentage',
             'category', 'brand', 'primary_image', 'image_url', 'stock_status',
-            'is_featured', 'created_at'
+            'stock_quantity', 'is_active', 'is_featured', 'created_at'
         ]
 
     def get_primary_image(self, obj):
@@ -141,9 +141,16 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             'meta_title', 'meta_description',
             'specifications'
         ]
+        extra_kwargs = {
+            'sku': {'required': False, 'read_only': True}  # Make SKU optional and read-only
+        }
 
     def create(self, validated_data):
         specs_data = validated_data.pop('specifications', [])
+        
+        # Generate SKU if not provided
+        if 'sku' not in validated_data or not validated_data['sku']:
+            validated_data['sku'] = self.generate_sku(validated_data)
         
         product = Product.objects.create(**validated_data)
         
@@ -152,9 +159,61 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             TechnicalSpecification.objects.create(product=product, **spec_data)
         
         return product
+    
+    def generate_sku(self, validated_data):
+        """Generate unique SKU based on product name and category"""
+        import uuid
+        from django.db import transaction
+        
+        name = validated_data.get('name', '')
+        category = validated_data.get('category')
+        
+        # Category prefix mapping
+        category_prefixes = {
+            7: 'PT',   # Power Tools
+            8: 'HT',   # Hand Tools  
+            9: 'EL',   # Electrical
+            10: 'PL',  # Plumbing
+            11: 'BM',  # Building Materials
+            12: 'SE',  # Safety Equipment
+            13: 'TL',  # Tools
+            14: 'PA',  # Painting
+        }
+        
+        # Get category prefix
+        if category and hasattr(category, 'id'):
+            category_id = category.id
+        elif isinstance(category, int):
+            category_id = category
+        else:
+            category_id = None
+            
+        prefix = category_prefixes.get(category_id, 'PRD')
+        
+        # Generate name part
+        name_part = ''
+        if name:
+            name_part = ''.join(c for c in name.upper() if c.isalnum())[:6]
+        
+        # Generate unique SKU
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            random_num = str(uuid.uuid4().int)[:4]  # Get first 4 digits of UUID
+            sku = f"{prefix}-{name_part}-{random_num}" if name_part else f"{prefix}-{random_num}"
+            
+            # Check if SKU already exists
+            if not Product.objects.filter(sku=sku).exists():
+                return sku
+        
+        # Fallback if all attempts fail (very unlikely)
+        return f"{prefix}-{uuid.uuid4().hex[:8].upper()}"
 
     def update(self, instance, validated_data):
         specs_data = validated_data.pop('specifications', [])
+        
+        # Don't allow SKU to be changed during update
+        if 'sku' in validated_data:
+            validated_data.pop('sku')
         
         # Update product fields
         for attr, value in validated_data.items():

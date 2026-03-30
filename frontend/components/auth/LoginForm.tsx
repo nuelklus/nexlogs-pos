@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoginResponse } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 
 const loginSchema = z.object({
@@ -22,12 +23,35 @@ interface LoginFormProps {
 export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Get redirect URL from search params, default to dashboard
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  // Get redirect URL from search params
+  const redirectTo = searchParams.get('redirect');
+  
+  // Smart redirect logic
+  const getRedirectUrl = (userRole?: string) => {
+    // If explicit redirect parameter provided, use it
+    if (redirectTo && redirectTo !== '/' && !redirectTo.includes('/login') && !redirectTo.includes('/register')) {
+      return redirectTo;
+    }
+    
+    // For CUSTOMER and PRO_CONTRACTOR, try to return to previous page
+    if (userRole === 'CUSTOMER' || userRole === 'PRO_CONTRACTOR') {
+      // Check if there's a previous page in session storage
+      const previousPage = typeof window !== 'undefined' ? sessionStorage.getItem('previousPage') : null;
+      if (previousPage && previousPage !== '/login' && previousPage !== '/register') {
+        return previousPage;
+      }
+      
+      // Default to homepage for customers/contractors if no previous page
+      return '/';
+    }
+    
+    // For other roles (ADMIN, etc.), always redirect to dashboard
+    return '/dashboard';
+  };
 
   const {
     register,
@@ -42,9 +66,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     setError(null);
 
     try {
-      await login(data);
+      const response = await login(data);
       onSuccess?.();
-      router.push(redirectTo);
+      
+      // Use smart redirect logic after successful login
+      // Get user role from login response immediately
+      const userRole = response.user.role;
+      const redirectUrl = getRedirectUrl(userRole);
+      
+      router.push(redirectUrl);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {

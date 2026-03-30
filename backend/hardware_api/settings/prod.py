@@ -91,20 +91,6 @@ WHITENOISE_MANIFEST_STRICT = False  # Allow missing files gracefully
 WHITENOISE_INDEX_FILE = False  # Don't serve index files automatically
 WHITENOISE_ALLOW_ALL_ORIGINS = False  # Security: don't allow all origins
 
-# Middleware (stripped for 512MB RAM optimization)
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Right after SecurityMiddleware
-    'corsheaders.middleware.CorsMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Removed: django.middleware.gzip.GZipMiddleware (saves memory)
-]
-
 # Templates (optimized)
 TEMPLATES = [
     {
@@ -124,7 +110,6 @@ TEMPLATES = [
 ]
 
 # Email (using Resend API to bypass Render SMTP blocking)
-# Note: We use Resend Python SDK directly, not traditional SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Fallback to console
 DEFAULT_FROM_EMAIL = 'onboarding@resend.dev'  # Use Resend's verified domain
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@hardware-ecommerce.com')
@@ -137,6 +122,31 @@ RESEND_FROM_EMAIL = 'onboarding@resend.dev'  # Resend's verified domain
 CONN_MAX_AGE = 600  # Database connection pooling
 USE_L10N = False  # Disable localization to save memory
 USE_TZ = True  # Keep timezone support
+
+# Additional performance settings
+DJANGO_DETERMINISTIC_APPS = True  # Faster app loading
+SILENCED_SYSTEM_CHECKS = ['fields.W342', 'security.W008']  # Silence non-critical warnings
+
+# Database connection optimization
+DATABASES['default']['OPTIONS'] = {
+    'MAX_CONNS': 20,
+    'MIN_CONNS': 5,
+    'CONNECT_TIMEOUT': 10,
+}
+
+# Response compression middleware (add to MIDDLEWARE below)
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.gzip.GZipMiddleware',  # Add compression back for production
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
 
 # Allowed hosts (Render will provide this)
 ALLOWED_HOSTS = [

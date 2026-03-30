@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { apiClient, Product, ProductDetail, SearchFilters } from '@/lib/api';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { apiClient, Product, ProductDetail, SearchFilters, ProductsResponse, CategoryFallback } from '@/lib/api';
+import { useCache } from './useCache';
 
 interface UseProductsOptions {
   immediate?: boolean;
@@ -42,18 +43,18 @@ const transformProduct = (product: any) => {
       type: spec.spec_type || 'other'
     })) || [],
     stockStatus: product.stock_status?.status === 'in_stock' ? 'in_stock' : 
-                product.stock_status?.status === 'low_stock' ? 'low_stock' : 'out_of_stock',
+                product.stock_status?.status === 'low_stock' ? 'low_stock' : 'out_of_stock' as const,
     warehouse: 'Tema',
     sku: product.sku,
   };
 };
 
 export function useProducts(options: UseProductsOptions = {}) {
-  const { immediate = true, filters = {} } = options;
-  
-  const [products, setProducts] = useState<any[]>([]);
+  const { immediate = false, filters: externalFilters = {} } = options;
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categoryFallback, setCategoryFallback] = useState<CategoryFallback | null>(null);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -61,10 +62,67 @@ export function useProducts(options: UseProductsOptions = {}) {
     hasNext: false,
     hasPrevious: false,
   });
+  const [filters, setFilters] = useState<SearchFilters>(externalFilters);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Create cache key based on filters
+  const cacheKey = useMemo(() => 
+    `products_${JSON.stringify(externalFilters)}_${JSON.stringify({ page: 1 })}`,
+    [externalFilters]
+  );
+
+  // Use cache for products
+  const { data: cachedData, loading: cacheLoading, error: cacheError, invalidate } = useCache(
+    cacheKey,
+    () => apiClient.getProducts({ ...externalFilters, page: 1, page_size: 12 }),
+    3 * 60 * 1000 // 3 minutes cache
+  );
+
+  useEffect(() => {
+    if (cachedData && !cacheLoading && !cacheError) {
+      const products = cachedData.results || [];
+      const count = cachedData.count || products.length;
+      const nextPage = cachedData.next;
+      const previousPage = cachedData.previous;
+      
+      // Transform the products
+      const transformedProducts = products.map(transformProduct) as Product[];
+      setProducts(transformedProducts);
+      
+      // Update pagination info from DRF response
+      setPagination({
+        currentPage: 1,
+        totalPages: Math.ceil(count / 12) || 1,
+        totalCount: count,
+        hasNext: !!nextPage,
+        hasPrevious: !!previousPage,
+      });
+      
+      // Set category fallback information if present
+      if (cachedData.category_fallback) {
+        setCategoryFallback(cachedData.category_fallback);
+      } else {
+        setCategoryFallback(null);
+      }
+      
+      setLoading(false);
+      setError(null);
+    } else if (cacheLoading) {
+      setLoading(true);
+      setError(null);
+    } else if (cacheError) {
+      setLoading(false);
+      setError(cacheError);
+    }
+  }, [cachedData, cacheLoading, cacheError]);
 
   const fetchProducts = useCallback(async (newFilters?: SearchFilters, page: number = 1) => {
     setLoading(true);
     setError(null);
+    setCategoryFallback(null);
+    
+    // Add small delay to ensure loading state is visible
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     try {
       const filtersWithPagination = {
@@ -75,17 +133,21 @@ export function useProducts(options: UseProductsOptions = {}) {
       };
       
       console.log('🔍 Fetching products with filters:', filtersWithPagination);
-      const response = await apiClient.getProducts(filtersWithPagination);
+      const response: ProductsResponse = await apiClient.getProducts(filtersWithPagination);
+      
+      console.log('📦 Full API response:', response);
+      console.log('🏷️ Category fallback in response:', response.category_fallback);
       
       // Handle Django REST Framework pagination response
-      const products = (response as any).results || response;
-      const count = (response as any).count || products.length;
-      const nextPage = (response as any).next;
-      const previousPage = (response as any).previous;
+      const products = response.results || [];
+      const count = response.count || products.length;
+      const nextPage = response.next;
+      const previousPage = response.previous;
       
       // Transform the products
-      const transformedProducts = products.map(transformProduct);
+      const transformedProducts = products.map(transformProduct) as Product[];
       
+      // Always replace products, don't append
       setProducts(transformedProducts);
       
       // Update pagination info from DRF response
@@ -96,6 +158,15 @@ export function useProducts(options: UseProductsOptions = {}) {
         hasNext: !!nextPage,
         hasPrevious: !!previousPage,
       });
+      
+      // Set category fallback information if present
+      if (response.category_fallback) {
+        console.log('🔄 Setting category fallback:', response.category_fallback);
+        setCategoryFallback(response.category_fallback);
+      } else {
+        console.log('🧹 Clearing category fallback - none in response');
+        setCategoryFallback(null);
+      }
       
       console.log('✅ Loaded products:', transformedProducts.length, 'items');
       console.log('📊 Pagination info:', { count, nextPage, previousPage });
@@ -110,6 +181,21 @@ export function useProducts(options: UseProductsOptions = {}) {
     fetchProducts(filters, page);
   }, [fetchProducts, filters]);
 
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    (searchQuery: string, searchFilters: SearchFilters = {}) => {
+      // Clear existing timeout if any
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      searchTimeoutRef.current = setTimeout(() => {
+        fetchProducts({ ...searchFilters, search: searchQuery });
+      }, 300); // 300ms delay
+    },
+    [fetchProducts]
+  );
+
   useEffect(() => {
     if (immediate) {
       fetchProducts();
@@ -121,8 +207,10 @@ export function useProducts(options: UseProductsOptions = {}) {
     loading,
     error,
     pagination,
+    categoryFallback,
     refetch: fetchProducts,
     loadPage,
+    debouncedSearch,
   };
 }
 
@@ -140,26 +228,26 @@ export function useProduct(slug: string) {
     try {
       const data = await apiClient.getProductBySlug(slug);
       console.log('🔍 Raw product data from API:', data);
-      console.log('🔍 product.image_url:', data.image_url);
-      console.log('🔍 product.primary_image:', data.primary_image);
+      console.log('🔍 product.image_url:', (data as any).image_url);
+      console.log('🔍 product.primary_image:', (data as any).primary_image);
       
       // Transform product data to match our frontend structure
       const transformedProduct = {
         ...data,
-        image: data.image_url || data.primary_image?.image || 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Product',
-        price: parseFloat(data.price),
-        originalPrice: data.compare_price ? parseFloat(data.compare_price) : undefined,
-        category: data.category?.name || 'Unknown',
-        categoryId: data.category?.id,
-        categorySlug: data.category?.slug,
-        brand: data.brand?.name || 'Unknown',
-        brandId: data.brand?.id,
-        brandSlug: data.brand?.slug,
-        rating: data.average_rating || 4.5,
-        reviewCount: data.reviews?.length || 0,
-        stockStatus: data.stock_status?.status === 'in_stock' ? 'in_stock' : 
-                    data.stock_status?.status === 'low_stock' ? 'low_stock' : 'out_of_stock',
-        technicalSpecs: data.specifications?.map((spec: any) => ({
+        image: (data as any).image_url || (data as any).primary_image?.image || 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Product',
+        price: parseFloat(data.price.toString()),
+        originalPrice: (data as any).compare_price ? parseFloat((data as any).compare_price.toString()) : undefined,
+        category: typeof data.category === 'string' ? data.category : (data as any).category?.name || 'Unknown',
+        categoryId: typeof data.category === 'string' ? undefined : (data as any).category?.id,
+        categorySlug: typeof data.category === 'string' ? undefined : (data as any).category?.slug,
+        brand: typeof data.brand === 'string' ? data.brand : (data as any).brand?.name || 'Unknown',
+        brandId: typeof data.brand === 'string' ? undefined : (data as any).brand?.id,
+        brandSlug: typeof data.brand === 'string' ? undefined : (data as any).brand?.slug,
+        rating: (data as any).average_rating || 4.5,
+        reviewCount: (data as any).reviews?.length || 0,
+        stockStatus: (data as any).stock_status?.status === 'in_stock' ? 'in_stock' : 
+                    (data as any).stock_status?.status === 'low_stock' ? 'low_stock' : 'out_of_stock' as const,
+        technicalSpecs: (data as any).specifications?.map((spec: any) => ({
           label: spec.label,
           value: spec.value,
           type: spec.spec_type || 'other'

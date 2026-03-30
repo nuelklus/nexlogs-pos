@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   NavigationMenu,
@@ -19,109 +19,97 @@ import {
   Shield,
   Lightbulb,
   PaintBucket,
-  ChevronRight
+  ChevronRight,
+  Package
 } from 'lucide-react';
+import { useCategories, useBrands } from '@/hooks/useProducts';
 
-const departments = [
-  {
-    title: 'Power Tools',
-    icon: <Zap className="h-5 w-5" />,
-    description: 'Cordless drills, saws, grinders',
-    categories: [
-      { name: 'Cordless Drills', href: '/products/power-tools/cordless-drills' },
-      { name: 'Circular Saws', href: '/products/power-tools/circular-saws' },
-      { name: 'Angle Grinders', href: '/products/power-tools/angle-grinders' },
-      { name: 'Impact Drivers', href: '/products/power-tools/impact-drivers' },
-      { name: 'Rotary Hammers', href: '/products/power-tools/rotary-hammers' },
-    ],
-    featured: [
-      { name: 'DeWalt 18V Drill Kit', href: '/products/dw-dcd780c2' },
-      { name: 'Milwaukee M18 Fuel', href: '/products/mw-2712-20' },
-    ]
-  },
-  {
-    title: 'Hand Tools',
-    icon: <Hammer className="h-5 w-5" />,
-    description: 'Wrenches, sockets, pliers',
-    categories: [
-      { name: 'Socket Sets', href: '/products/hand-tools/socket-sets' },
-      { name: 'Wrenches', href: '/products/hand-tools/wrenches' },
-      { name: 'Pliers', href: '/products/hand-tools/pliers' },
-      { name: 'Screwdrivers', href: '/products/hand-tools/screwdrivers' },
-      { name: 'Tool Boxes', href: '/products/hand-tools/tool-boxes' },
-    ],
-    featured: [
-      { name: 'Chrome Vanadium Set', href: '/products/skt-cv-145' },
-      { name: 'Pipe Wrench Set', href: '/products/pw-ss-set3' },
-    ]
-  },
-  {
-    title: 'Electrical',
-    icon: <Lightbulb className="h-5 w-5" />,
-    description: 'Wiring, lighting, circuit breakers',
-    categories: [
-      { name: 'Electrical Wire', href: '/products/electrical/wire' },
-      { name: 'Circuit Breakers', href: '/products/electrical/breakers' },
-      { name: 'Lighting', href: '/products/electrical/lighting' },
-      { name: 'Switches & Outlets', href: '/products/electrical/switches' },
-      { name: 'Conduit & Fittings', href: '/products/electrical/conduit' },
-    ],
-    featured: [
-      { name: 'Copper Wire 2.5mm', href: '/products/ew-cu-25' },
-      { name: 'LED Panel Lights', href: '/products/led-panel-36w' },
-    ]
-  },
-  {
-    title: 'Plumbing',
-    icon: <Droplet className="h-5 w-5" />,
-    description: 'Pipes, fittings, valves',
-    categories: [
-      { name: 'PVC Pipes', href: '/products/plumbing/pvc-pipes' },
-      { name: 'Pipe Fittings', href: '/products/plumbing/fittings' },
-      { name: 'Valves', href: '/products/plumbing/valves' },
-      { name: 'Water Pumps', href: '/products/plumbing/pumps' },
-      { name: 'Sealants & Tapes', href: '/products/plumbing/sealants' },
-    ],
-    featured: [
-      { name: 'PVC Pipe 1"', href: '/products/pvc-pipe-1' },
-      { name: 'Brass Fittings Set', href: '/products/brass-fittings' },
-    ]
-  },
-  {
-    title: 'Building Materials',
-    icon: <Home className="h-5 w-5" />,
-    description: 'Cement, blocks, steel',
-    categories: [
-      { name: 'Cement', href: '/products/building/cement' },
-      { name: 'Sandcrete Blocks', href: '/products/building/blocks' },
-      { name: 'Steel Rods', href: '/products/building/steel' },
-      { name: 'Roofing Sheets', href: '/products/building/roofing' },
-      { name: 'Aggregates', href: '/products/building/aggregates' },
-    ],
-    featured: [
-      { name: 'Dangote Cement', href: '/products/cement-dangote' },
-      { name: '6" Sandcrete Blocks', href: '/products/blocks-6inch' },
-    ]
-  },
-  {
-    title: 'Safety Equipment',
-    icon: <Shield className="h-5 w-5" />,
-    description: 'Hard hats, gloves, safety gear',
-    categories: [
-      { name: 'Hard Hats', href: '/products/safety/hard-hats' },
-      { name: 'Safety Gloves', href: '/products/safety/gloves' },
-      { name: 'Safety Boots', href: '/products/safety/boots' },
-      { name: 'Eye Protection', href: '/products/safety/eye-protection' },
-      { name: 'Respirators', href: '/products/safety/respirators' },
-    ],
-    featured: [
-      { name: 'Industrial Hard Hat', href: '/products/hard-hat-ansi' },
-      { name: 'Leather Safety Gloves', href: '/products/gloves-leather' },
-    ]
-  },
-];
+// Icon mapping for categories
+const getCategoryIcon = (categoryName: string) => {
+  const name = categoryName.toLowerCase();
+  if (name.includes('power') || name.includes('drill') || name.includes('saw')) return <Zap className="h-5 w-5" />;
+  if (name.includes('hand') || name.includes('hammer') || name.includes('wrench')) return <Hammer className="h-5 w-5" />;
+  if (name.includes('electrical') || name.includes('light') || name.includes('wire')) return <Lightbulb className="h-5 w-5" />;
+  if (name.includes('plumbing') || name.includes('pipe') || name.includes('water')) return <Droplet className="h-5 w-5" />;
+  if (name.includes('safety') || name.includes('protect') || name.includes('gear')) return <Shield className="h-5 w-5" />;
+  if (name.includes('building') || name.includes('cement') || name.includes('material')) return <Home className="h-5 w-5" />;
+  return <Package className="h-5 w-5" />;
+};
 
 export const HardwareNavigation: React.FC = () => {
+  const { categories, loading: categoriesLoading } = useCategories();
+  const { brands, loading: brandsLoading } = useBrands();
+  const [departments, setDepartments] = useState<any[]>([]);
+
+  // Group categories by parent categories to create departments
+  useEffect(() => {
+    if (!categoriesLoading && categories.length > 0) {
+      // Get top-level categories (departments)
+      const topLevelCategories = categories.filter(cat => !cat.parent);
+      
+      const departmentsData = topLevelCategories.map(category => ({
+        id: category.id,
+        title: category.name,
+        slug: category.slug,
+        icon: getCategoryIcon(category.name),
+        description: category.description || `${category.name} and supplies`,
+        href: `/products?category=${category.slug}`,
+        // Get subcategories
+        categories: categories
+          .filter(cat => cat.parent === category.id)
+          .slice(0, 4)
+          .map(subCat => ({
+            name: subCat.name,
+            href: `/products?category=${subCat.slug}`
+          })),
+        // For now, we'll skip featured products until we have that endpoint
+        featured: []
+      }));
+
+      // Also include categories that don't have subcategories as their own departments
+      const standaloneCategories = categories.filter(cat => 
+        !cat.parent && 
+        !categories.some(subCat => subCat.parent === cat.id)
+      );
+
+      const standaloneDepartments = standaloneCategories.map(category => ({
+        id: category.id,
+        title: category.name,
+        slug: category.slug,
+        icon: getCategoryIcon(category.name),
+        description: category.description || `${category.name} and supplies`,
+        href: `/products?category=${category.slug}`,
+        categories: [],
+        featured: []
+      }));
+
+      setDepartments([...departmentsData, ...standaloneDepartments]);
+    }
+  }, [categories, categoriesLoading]);
+
+  if (categoriesLoading) {
+    return (
+      <NavigationMenu className="hidden lg:flex">
+        <NavigationMenuList>
+          <NavigationMenuItem>
+            <NavigationMenuTrigger className="text-gray-700 hover:text-blue-600 font-medium bg-transparent">
+              Shop by Department
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <div className="w-[400px] p-6 bg-white">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </div>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
+    );
+  }
+
   return (
     <NavigationMenu className="hidden lg:flex">
       <NavigationMenuList>
@@ -132,7 +120,7 @@ export const HardwareNavigation: React.FC = () => {
           <NavigationMenuContent>
             <div className="grid w-[800px] grid-cols-3 gap-6 p-6 bg-white">
               {departments.map((department) => (
-                <div key={department.title} className="space-y-3">
+                <div key={department.id} className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <div className="text-blue-600">
                       {department.icon}
@@ -141,30 +129,26 @@ export const HardwareNavigation: React.FC = () => {
                   </div>
                   <p className="text-sm text-gray-600">{department.description}</p>
                   
-                  <div className="space-y-2">
-                    {department.categories.slice(0, 4).map((category) => (
-                      <NavigationMenuLink asChild key={category.name}>
-                        <Link
-                          href={category.href}
-                          className="block text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                        >
-                          {category.name}
-                        </Link>
-                      </NavigationMenuLink>
-                    ))}
-                  </div>
+                  {/* Main category link */}
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href={department.href}
+                      className="block text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                    >
+                      View All {department.title} →
+                    </Link>
+                  </NavigationMenuLink>
                   
-                  {department.featured.length > 0 && (
-                    <div className="pt-2 border-t border-gray-100">
-                      <p className="text-xs font-medium text-gray-500 mb-1">Featured</p>
-                      {department.featured.map((item) => (
-                        <NavigationMenuLink asChild key={item.name}>
+                  {/* Subcategories */}
+                  {department.categories.length > 0 && (
+                    <div className="space-y-2">
+                      {department.categories.map((category: any) => (
+                        <NavigationMenuLink asChild key={category.name}>
                           <Link
-                            href={item.href}
-                            className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+                            href={category.href}
+                            className="block text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                           >
-                            <ChevronRight className="h-3 w-3 mr-1" />
-                            {item.name}
+                            {category.name}
                           </Link>
                         </NavigationMenuLink>
                       ))}
@@ -172,42 +156,39 @@ export const HardwareNavigation: React.FC = () => {
                   )}
                 </div>
               ))}
+              
+              {departments.length === 0 && (
+                <div className="col-span-3 text-center py-8">
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No departments available</p>
+                </div>
+              )}
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
         
-        {/* <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link
-              href="/brands"
-              className="text-gray-700 hover:text-blue-600 font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
-            >
+        {/* Brands dropdown */}
+        {!brandsLoading && brands.length > 0 && (
+          <NavigationMenuItem>
+            <NavigationMenuTrigger className="text-gray-700 hover:text-blue-600 font-medium bg-transparent">
               Brands
-            </Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem> */}
-        
-        {/* <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link
-              href="/deals"
-              className="text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-md hover:bg-red-50 transition-colors"
-            >
-              Deals
-            </Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem> */}
-        
-        {/* <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link
-              href="/pro-contractor"
-              className="text-purple-600 hover:text-purple-700 font-medium px-4 py-2 rounded-md hover:bg-purple-50 transition-colors"
-            >
-              Pro Contractor
-            </Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem> */}
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <div className="grid w-[600px] grid-cols-3 gap-4 p-6 bg-white">
+                {brands.slice(0, 12).map((brand: any) => (
+                  <NavigationMenuLink asChild key={brand.id}>
+                    <Link
+                      href={`/products?brand=${brand.slug}`}
+                      className="block text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded transition-colors"
+                    >
+                      {brand.name}
+                    </Link>
+                  </NavigationMenuLink>
+                ))}
+              </div>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        )}
       </NavigationMenuList>
     </NavigationMenu>
   );

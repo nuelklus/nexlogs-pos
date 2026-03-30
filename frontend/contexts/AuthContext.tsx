@@ -1,14 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, AuthTokens, authAPI, tokenManager, LoginData, RegisterData } from '@/lib/auth';
+import { User, AuthTokens, authAPI, tokenManager, LoginData, RegisterData, LoginResponse, RegisterResponse } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (data: LoginData) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  login: (data: LoginData) => Promise<LoginResponse>;
+  register: (data: RegisterData) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -64,6 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authAPI.login(data);
       tokenManager.setTokens(response.tokens, response.user);
       setUser(response.user);
+      return response; // Return the response for immediate access to user data
     } catch (error) {
       throw error;
     }
@@ -74,6 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authAPI.register(data);
       tokenManager.setTokens(response.tokens, response.user);
       setUser(response.user);
+      return response; // Return the response for immediate access to user data
     } catch (error) {
       throw error;
     }
