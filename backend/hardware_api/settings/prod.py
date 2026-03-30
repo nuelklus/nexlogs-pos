@@ -127,13 +127,6 @@ USE_TZ = True  # Keep timezone support
 DJANGO_DETERMINISTIC_APPS = True  # Faster app loading
 SILENCED_SYSTEM_CHECKS = ['fields.W342', 'security.W008']  # Silence non-critical warnings
 
-# Database connection optimization
-DATABASES['default']['OPTIONS'] = {
-    'MAX_CONNS': 20,
-    'MIN_CONNS': 5,
-    'CONNECT_TIMEOUT': 10,
-}
-
 # Response compression middleware (add to MIDDLEWARE below)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
