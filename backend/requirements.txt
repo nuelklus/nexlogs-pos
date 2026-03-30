@@ -2,9 +2,6 @@
 setuptools>=70.0.0
 wheel>=0.40.0
 
-# JWT dependencies (required for rest_framework_simplejwt)
-pkg-resources==0.0.0
-
 # Core Django and DRF
 Django==5.0.7
 djangorestframework==3.15.2
