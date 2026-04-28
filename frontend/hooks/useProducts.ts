@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { apiClient, Product, ProductDetail, SearchFilters, ProductsResponse, CategoryFallback } from '@/lib/api';
+import { apiClient, ProductDetail, SearchFilters, ProductsResponse, CategoryFallback } from '@/lib/api';
+import { Product } from '@/types/product';
 import { useCache } from './useCache';
 
 interface UseProductsOptions {
@@ -9,20 +10,18 @@ interface UseProductsOptions {
   filters?: SearchFilters;
 }
 
-// Memoized data transformation
 const transformProduct = (product: any) => {
-  // Handle image_url from Django Product model
-  let imageUrl = 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Product'; // Default fallback
+
+  let imageUrl = product.image_url;
+
+  if (imageUrl && imageUrl.startsWith('/')) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000';
+    imageUrl = `${baseUrl}${imageUrl}`;
+  }
   
-  if (product.image_url) {
-    // Check if it's a relative path (doesn't start with http)
-    if (product.image_url.startsWith('/')) {
-      // Prepend Django media URL for relative paths
-      imageUrl = `https://hardware-ecommerce-monorepo.onrender.com${product.image_url}`;
-    } else {
-      // Use full URL as-is
-      imageUrl = product.image_url;
-    }
+  // Add fallback if no image URL exists
+  if (!imageUrl) {
+    imageUrl = '/images/no-image-available.svg';
   }
   
   return {
@@ -31,8 +30,9 @@ const transformProduct = (product: any) => {
     slug: product.slug,
     description: product.short_description,
     price: parseFloat(product.price),
+    currency: 'GHS' as const,
     originalPrice: product.compare_price ? parseFloat(product.compare_price) : undefined,
-    image: imageUrl, // Use processed image_url
+    image: imageUrl, 
     category: product.category?.name || 'Unknown',
     brand: product.brand?.name || 'Unknown',
     rating: product.average_rating || 4.5,
@@ -44,9 +44,14 @@ const transformProduct = (product: any) => {
     })) || [],
     stockStatus: product.stock_status?.status === 'in_stock' ? 'in_stock' : 
                 product.stock_status?.status === 'low_stock' ? 'low_stock' : 'out_of_stock' as const,
-    warehouse: 'Tema',
+    warehouse: {
+      id: "1",
+      name: "Tema Warehouse",
+      location: "Tema",
+      phone: "+233 24 123 4567"
+    },
     sku: product.sku,
-  };
+  } as Product;
 };
 
 export function useProducts(options: UseProductsOptions = {}) {
@@ -65,17 +70,17 @@ export function useProducts(options: UseProductsOptions = {}) {
   const [filters, setFilters] = useState<SearchFilters>(externalFilters);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Create cache key based on filters
+  const memoizedTransformProduct = useMemo(() => transformProduct, []);
+
   const cacheKey = useMemo(() => 
     `products_${JSON.stringify(externalFilters)}_${JSON.stringify({ page: 1 })}`,
     [externalFilters]
   );
 
-  // Use cache for products
   const { data: cachedData, loading: cacheLoading, error: cacheError, invalidate } = useCache(
     cacheKey,
     () => apiClient.getProducts({ ...externalFilters, page: 1, page_size: 12 }),
-    3 * 60 * 1000 // 3 minutes cache
+    3 * 60 * 1000 
   );
 
   useEffect(() => {
@@ -84,12 +89,10 @@ export function useProducts(options: UseProductsOptions = {}) {
       const count = cachedData.count || products.length;
       const nextPage = cachedData.next;
       const previousPage = cachedData.previous;
-      
-      // Transform the products
-      const transformedProducts = products.map(transformProduct) as Product[];
+
+      const transformedProducts = products.map(memoizedTransformProduct) as Product[];
       setProducts(transformedProducts);
-      
-      // Update pagination info from DRF response
+
       setPagination({
         currentPage: 1,
         totalPages: Math.ceil(count / 12) || 1,
@@ -97,8 +100,7 @@ export function useProducts(options: UseProductsOptions = {}) {
         hasNext: !!nextPage,
         hasPrevious: !!previousPage,
       });
-      
-      // Set category fallback information if present
+
       if (cachedData.category_fallback) {
         setCategoryFallback(cachedData.category_fallback);
       } else {
@@ -120,8 +122,7 @@ export function useProducts(options: UseProductsOptions = {}) {
     setLoading(true);
     setError(null);
     setCategoryFallback(null);
-    
-    // Add small delay to ensure loading state is visible
+
     await new Promise(resolve => setTimeout(resolve, 100));
     
     try {
@@ -129,7 +130,7 @@ export function useProducts(options: UseProductsOptions = {}) {
         ...newFilters,
         ...filters,
         page: page,
-        page_size: 12, // 12 products per page
+        page_size: 12, 
       };
       
       console.log('🔍 Fetching products with filters:', filtersWithPagination);
@@ -137,20 +138,16 @@ export function useProducts(options: UseProductsOptions = {}) {
       
       console.log('📦 Full API response:', response);
       console.log('🏷️ Category fallback in response:', response.category_fallback);
-      
-      // Handle Django REST Framework pagination response
+
       const products = response.results || [];
       const count = response.count || products.length;
       const nextPage = response.next;
       const previousPage = response.previous;
-      
-      // Transform the products
-      const transformedProducts = products.map(transformProduct) as Product[];
-      
-      // Always replace products, don't append
+
+      const transformedProducts = products.map(memoizedTransformProduct) as Product[];
+
       setProducts(transformedProducts);
-      
-      // Update pagination info from DRF response
+
       setPagination({
         currentPage: page,
         totalPages: Math.ceil(count / 12) || 1,
@@ -158,8 +155,7 @@ export function useProducts(options: UseProductsOptions = {}) {
         hasNext: !!nextPage,
         hasPrevious: !!previousPage,
       });
-      
-      // Set category fallback information if present
+
       if (response.category_fallback) {
         console.log('🔄 Setting category fallback:', response.category_fallback);
         setCategoryFallback(response.category_fallback);
@@ -181,17 +177,16 @@ export function useProducts(options: UseProductsOptions = {}) {
     fetchProducts(filters, page);
   }, [fetchProducts, filters]);
 
-  // Debounced search function
   const debouncedSearch = useCallback(
     (searchQuery: string, searchFilters: SearchFilters = {}) => {
-      // Clear existing timeout if any
+      
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
 
       searchTimeoutRef.current = setTimeout(() => {
         fetchProducts({ ...searchFilters, search: searchQuery });
-      }, 300); // 300ms delay
+      }, 300); 
     },
     [fetchProducts]
   );
@@ -230,11 +225,10 @@ export function useProduct(slug: string) {
       console.log('🔍 Raw product data from API:', data);
       console.log('🔍 product.image_url:', (data as any).image_url);
       console.log('🔍 product.primary_image:', (data as any).primary_image);
-      
-      // Transform product data to match our frontend structure
+
       const transformedProduct = {
         ...data,
-        image: (data as any).image_url || (data as any).primary_image?.image || 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Product',
+        image: (data as any).image_url || (data as any).primary_image?.image || '/images/no-image-available.svg',
         price: parseFloat(data.price.toString()),
         originalPrice: (data as any).compare_price ? parseFloat((data as any).compare_price.toString()) : undefined,
         category: typeof data.category === 'string' ? data.category : (data as any).category?.name || 'Unknown',
@@ -307,7 +301,12 @@ export function useInitialData() {
   }, []);
 
   useEffect(() => {
-    fetchInitialData();
+    // Use setTimeout to delay non-critical data loading
+    const timer = setTimeout(() => {
+      fetchInitialData();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [fetchInitialData]);
 
   return {

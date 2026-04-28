@@ -7,6 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Q, Avg, Count, F
 from django.core.cache import cache
+from django.core.files.storage import default_storage
 from django.conf import settings
 import os
 import uuid
@@ -351,7 +352,6 @@ class AdminProductUpdateView(generics.UpdateAPIView):
         cache.delete(f'product_{kwargs["pk"]}')
         return response
 
-
 class AdminProductDeleteView(generics.DestroyAPIView):
     """Delete product by ID (admin only)"""
     queryset = Product.objects.all()
@@ -363,7 +363,6 @@ class AdminProductDeleteView(generics.DestroyAPIView):
         from django.core.cache import cache
         cache.delete(f'product_{kwargs["pk"]}')
         return super().destroy(request, *args, **kwargs)
-
 
 class ProductUpdateView(generics.UpdateAPIView):
     """Update product (admin only)"""
@@ -415,6 +414,27 @@ def featured_products(request):
     products = Product.objects.filter(is_active=True, is_featured=True)[:12]
     serializer = ProductListSerializer(products, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+def initial_data(request):
+    """Get initial data for homepage - featured products, categories, and brands"""
+    # Get featured products
+    featured_products = Product.objects.filter(is_active=True, is_featured=True)[:12]
+    featured_serializer = ProductListSerializer(featured_products, many=True)
+    
+    # Get categories
+    categories = Category.objects.filter(is_active=True)
+    category_serializer = CategorySerializer(categories, many=True)
+    
+    # Get brands
+    brands = Brand.objects.filter(is_active=True)
+    brand_serializer = BrandSerializer(brands, many=True)
+    
+    return Response({
+        'featured_products': featured_serializer.data,
+        'categories': category_serializer.data,
+        'brands': brand_serializer.data,
+    })
 
 @api_view(['GET'])
 def product_categories(request):
@@ -544,7 +564,6 @@ def product_stats(request):
     }
     return Response(stats)
 
-
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 @parser_classes([MultiPartParser, FormParser])
@@ -592,7 +611,7 @@ def upload_product_image(request):
         
         # Ensure the URL is absolute
         if not image_url.startswith('http'):
-            image_url = f"http://localhost:8000{image_url}"
+            image_url = f"http://localhost:8000/media/{file_path}"
         
         return Response({
             'success': True,

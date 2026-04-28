@@ -26,16 +26,16 @@ export default function CartPage() {
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   const handleProceedToCheckout = () => {
-    // Don't proceed if auth is still loading
+    
     if (authLoading) return;
     
     if (!isAuthenticated) {
-      // Store current page for smart redirect after login
+      
       sessionStorage.setItem('previousPage', '/cart');
-      // Redirect to login with checkout as intended destination
+      
       window.location.href = '/login?redirect=/checkout';
     } else {
-      // User is authenticated, proceed to checkout
+      
       window.location.href = '/checkout';
     }
   };
@@ -47,7 +47,7 @@ export default function CartPage() {
     setTimeout(() => {
       updateQuantity(productId, newQuantity);
       setIsUpdating(null);
-    }, 300); // Small delay for better UX
+    }, 300); 
   };
 
   const handleRemoveItem = (productId: string) => {
@@ -97,7 +97,7 @@ export default function CartPage() {
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
+          {}
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
@@ -124,12 +124,12 @@ export default function CartPage() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Cart Items */}
+            {}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
                 <div key={item.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
                   <div className="flex flex-col sm:flex-row gap-6">
-                    {/* Product Image */}
+                    {}
                     <div className="relative">
                       <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
                         <Image
@@ -143,7 +143,7 @@ export default function CartPage() {
                       </div>
                     </div>
 
-                    {/* Product Details */}
+                    {}
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="flex-1">
@@ -170,7 +170,7 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      {/* Quantity Controls */}
+                      {}
                       <div className="flex items-center justify-between mt-4">
                         <div className="flex items-center space-x-2">
                           <span className="text-sm font-medium text-gray-700">Quantity:</span>
@@ -215,7 +215,7 @@ export default function CartPage() {
               ))}
             </div>
 
-            {/* Order Summary */}
+            {}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
@@ -244,7 +244,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Features */}
+                {}
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center text-sm text-gray-600">
                     <Truck className="h-4 w-4 mr-2 text-green-600" />
@@ -260,7 +260,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Checkout Button */}
+                {}
                 <Button 
                   onClick={handleProceedToCheckout}
                   disabled={authLoading}
@@ -270,7 +270,7 @@ export default function CartPage() {
                   {authLoading ? 'Checking...' : (isAuthenticated ? 'Proceed to Checkout' : 'Sign In to Checkout')}
                 </Button>
 
-                {/* Security Note */}
+                {}
                 <div className="mt-4 text-center">
                   <p className="text-xs text-gray-500">
                     🔒 Secure checkout powered by industry-standard encryption

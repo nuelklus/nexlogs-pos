@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 def main() -> None:
     # Use production settings on Render, development locally
     if os.getenv('RENDER_EXTERNAL_HOSTNAME'):
@@ -16,7 +15,6 @@ def main() -> None:
             "Couldn't import Django. Are you sure it's installed and available on your PYTHONPATH environment variable?"
         ) from exc
     execute_from_command_line(sys.argv)
-
 
 if __name__ == "__main__":
     main()

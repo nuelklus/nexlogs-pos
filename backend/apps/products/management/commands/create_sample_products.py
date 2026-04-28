@@ -229,7 +229,7 @@ class Command(BaseCommand):
                     # Add product images
                     ProductImage.objects.create(
                         product=product,
-                        image=f'https://via.placeholder.com/400x300/0066CC/FFFFFF?text={product.name}',
+                        image=f'https:
                         alt_text=product.name,
                         is_primary=True
                     )

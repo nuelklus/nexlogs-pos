@@ -3,7 +3,6 @@ from django.db import models
 from django.conf import settings
 from apps.products.models import Product
 
-
 class Order(models.Model):
     ORDER_STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -102,10 +101,9 @@ class Order(models.Model):
     def grand_total(self):
         return self.total_amount + self.shipping_cost + self.tax_amount
 
-
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     product_name = models.CharField(max_length=200)  # Store name in case product is deleted
     product_sku = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -117,7 +115,6 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         return self.price * self.quantity
-
 
 class OrderStatusUpdate(models.Model):
     order = models.ForeignKey(Order, related_name='status_updates', on_delete=models.CASCADE)

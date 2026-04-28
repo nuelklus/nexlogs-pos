@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from .serializers import JobSiteSerializer
 from .services import create_job_site
 
-
 class JobSiteListCreateView(APIView):
     def get(self, request):
         return Response({"detail": "Not implemented"}, status=501)

@@ -34,3 +34,17 @@ Thumbs.db
 .vscode/
 .idea/
 *.iml
+
+# Render
+render-static/
+build/
+
+# Environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Backup files
+*.bak
+*.backup

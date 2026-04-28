@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/layout/Header';
 import { useInitialData } from '@/hooks/useProducts';
+import { useCart } from '@/contexts/CartContext';
 import { 
   Wrench, 
   Truck, 
@@ -21,13 +22,12 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
-// Lazy load HardwareCard for better performance
 const HardwareCard = dynamic(() => import('@/components/products/HardwareCard').then(mod => ({ default: mod.HardwareCard })), {
   loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>,
   ssr: false
 });
 
-// Product interface
+
 interface Product {
   id: string;
   name: string;
@@ -35,7 +35,7 @@ interface Product {
   description: string;
   price: number;
   currency: 'GHS';
-  image: string; // Single image URL
+  image: string; 
   category: string;
   brand: string;
   rating: number;
@@ -55,7 +55,6 @@ interface Product {
   sku: string;
 }
 
-// Loading skeleton component
 const ProductCardSkeleton = () => (
   <div className="bg-white rounded-lg shadow-md overflow-hidden">
     <div className="relative aspect-[4/3] bg-gray-200">
@@ -75,35 +74,40 @@ const ProductCardSkeleton = () => (
 export default function HomePage() {
   const { isAuthenticated, user, logout } = useAuth();
   const { data, loading, error, refetch } = useInitialData();
+  const { addToCart } = useCart();
   const [retryCount, setRetryCount] = useState(0);
 
   const handleQuickAdd = useCallback((productId: string, quantity: number) => {
     console.log(`Adding ${quantity} of product ${productId} to cart`);
-    // TODO: Implement cart functionality
-  }, []);
+    
+    if (data?.featured_products) {
+      const product = data.featured_products.find((p: any) => p.id.toString() === productId);
+      if (product) {
+        addToCart(product, quantity);
+      }
+    }
+  }, [data, addToCart]);
 
   const handleRetry = useCallback(() => {
     setRetryCount(prev => prev + 1);
     refetch();
   }, [refetch]);
 
-  // Transform API products to match Product interface - with immediate fallback
   const transformedProducts = useMemo(() => {
     if (!data?.featured_products) return [];
     
     return data.featured_products.map((product: any) => {
-      // Handle image_url from Django Product model
-      let imageUrl = 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Product'; // Default fallback
       
-      if (product.image_url) {
-        // Check if it's a relative path (doesn't start with http)
-        if (product.image_url.startsWith('/')) {
-          // Prepend Django media URL for relative paths
-          imageUrl = `https://hardware-ecommerce-monorepo.onrender.com${product.image_url}`;
-        } else {
-          // Use full URL as-is
-          imageUrl = product.image_url;
-        }
+      let imageUrl = product.image_url;
+
+      if (imageUrl && imageUrl.startsWith('/')) {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000';
+        imageUrl = `${baseUrl}${imageUrl}`;
+      }
+      
+      // Add fallback if no image URL exists
+      if (!imageUrl) {
+        imageUrl = '/images/no-image-available.svg';
       }
       
       return {
@@ -113,7 +117,7 @@ export default function HomePage() {
         description: product.short_description,
         price: parseFloat(product.price),
         currency: 'GHS' as const,
-        image: imageUrl, // Single image URL
+        image: imageUrl, 
         category: product.category.name,
         brand: product.brand.name,
         rating: 4.5,
@@ -137,10 +141,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Enhanced Header with Cart & Profile Icons */}
+      {}
       <Header />
 
-      {/* Hero Section */}
+      {}
       <section className="bg-gradient-to-br from-brand-charcoal to-gray-900 py-20">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -167,11 +171,7 @@ export default function HomePage() {
                     Shop Products
                   </Button>
                 </Link>
-                {/* <Link href="/pro-contractor">
-                  <Button size="lg" variant="outline">
-                    Pro Contractor Program
-                  </Button>
-                </Link> */}
+                {}
               </div>
             </div>
             <div className="relative">
@@ -206,7 +206,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Products Section */}
+      {}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -280,7 +280,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories Section */}
+      {}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -313,7 +313,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trust Indicators */}
+      {}
       <section className="py-12 bg-brand-charcoal">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -337,7 +337,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
+      {}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
@@ -375,18 +375,18 @@ export default function HomePage() {
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link href="/products" className="hover:text-brand-yellow transition-colors">Products</Link></li>
-                {/* <li><Link href="/brands" className="hover:text-white">Brands</Link></li> */}
-                {/* <li><Link href="/deals" className="hover:text-white">Deals</Link></li> */}
-                {/* <li><Link href="/pro-contractor" className="hover:text-white">Pro Contractor</Link></li> */}
+                {}
+                {}
+                {}
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Customer Service</h4>
               <ul className="space-y-2 text-gray-400">
-                {/* <li><Link href="/contact" className="hover:text-white">Contact Us</Link></li> */}
-                {/* <li><Link href="/shipping" className="hover:text-white">Shipping Info</Link></li> */}
-                {/* <li><Link href="/returns" className="hover:text-white">Returns</Link></li> */}
-                {/* <li><Link href="/warranty" className="hover:text-white">Warranty</Link></li> */}
+                {}
+                {}
+                {}
+                {}
               </ul>
             </div>
             <div>

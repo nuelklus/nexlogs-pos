@@ -26,12 +26,11 @@ export default function ConfirmDelivery() {
     setError('');
 
     try {
-      // Get order details first to verify
-      const order = await adminApi.getOrder(orderId.trim());
       
-      // Check if release code matches
+      const order = await adminApi.getOrder(orderId.trim());
+
       if (order.release_code === releaseCode.trim()) {
-        // Update order status to delivered
+        
         const updatedOrder = await adminApi.updateOrderStatus(orderId.trim(), 'delivered');
         
         setSuccess(true);

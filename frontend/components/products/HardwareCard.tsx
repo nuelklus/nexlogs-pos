@@ -109,7 +109,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
 
   return (
     <Card className={`group hover:shadow-lg transition-shadow duration-200 ${className}`}>
-      {/* Product Image */}
+      {}
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-50">
         <Link href={`/products/${product.slug}`}>
           <OptimizedImage
@@ -120,7 +120,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
           />
         </Link>
 
-        {/* Stock Status Badge */}
+        {}
         <div className="absolute top-3 left-3">
           <Badge className={`${stockInfo.color} flex items-center gap-1 text-xs font-medium`}>
             {stockInfo.icon}
@@ -128,7 +128,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
           </Badge>
         </div>
 
-        {/* Warehouse Badge */}
+        {}
         <div className="absolute top-3 right-3">
           <Badge variant="outline" className="bg-white/90 backdrop-blur-sm text-xs">
             <Truck className="h-3 w-3 mr-1" />
@@ -136,7 +136,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
           </Badge>
         </div>
 
-        {/* Quick Add Button (Overlay) */}
+        {}
         {isInStock && (
           <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <Button
@@ -157,9 +157,9 @@ export const HardwareCard = memo<HardwareCardProps>(({
         )}
       </div>
 
-      {/* Product Content */}
+      {}
       <CardContent className="p-4">
-        {/* Brand and Category */}
+        {}
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
             {typeof product.brand === 'string' ? product.brand : product.brand.name}
@@ -169,14 +169,14 @@ export const HardwareCard = memo<HardwareCardProps>(({
           </span>
         </div>
 
-        {/* Product Name */}
+        {}
         <Link href={`/products/${product.id}`}>
           <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        {/* Technical Specs */}
+        {}
         <div className="flex flex-wrap gap-1 mb-3">
           {product.technicalSpecs && product.technicalSpecs.slice(0, 3).map((spec, index) => (
             <Badge 
@@ -189,7 +189,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
           ))}
         </div>
 
-        {/* Rating */}
+        {}
         <div className="flex items-center mb-3">
           <div className="flex items-center">
             {[...Array(5)].map((_, i) => (
@@ -208,20 +208,20 @@ export const HardwareCard = memo<HardwareCardProps>(({
           </span>
         </div>
 
-        {/* Price */}
+        {}
         <div className="flex items-baseline mb-3">
           <span className="text-2xl font-bold text-gray-900">
             GHS {product.price.toLocaleString()}
           </span>
         </div>
 
-        {/* Stock Message */}
+        {}
         <p className="text-xs text-gray-600 mb-3">
           {stockInfo.message}
         </p>
       </CardContent>
 
-      {/* Card Footer */}
+      {}
       <CardFooter className="p-4 pt-0">
         <div className="flex gap-2 w-full">
           <Link href={`/products/${product.id}`} className="flex-1">
@@ -263,7 +263,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
         </div>
       </CardFooter>
       
-      {/* Success Indicator */}
+      {}
       {showAdded && (
         <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-md text-xs font-medium shadow-lg z-10">
           Added to cart!

@@ -19,7 +19,7 @@ export function OptimizedImage({
   height = 300, 
   className = '',
   priority = false,
-  fallback = 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Product',
+  fallback = 'https://via.placeholder.com/300x200',
   blurDataURL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A'
 }: OptimizedImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
@@ -38,7 +38,7 @@ export function OptimizedImage({
         }
       },
       {
-        rootMargin: '50px', // Start loading 50px before it comes into view
+        rootMargin: '50px', 
         threshold: 0.1
       }
     );

@@ -11,7 +11,7 @@ const memoryCache = new Map<string, CacheEntry<any>>();
 export function useCache<T>(
   key: string,
   fetcher: () => Promise<T>,
-  ttl: number = 5 * 60 * 1000 // 5 minutes default
+  ttl: number = 5 * 60 * 1000 
 ) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,7 +35,7 @@ export function useCache<T>(
     };
 
     const fetchData = async () => {
-      // Check cache first
+      
       const cachedData = getCachedData();
       if (cachedData) {
         setData(cachedData);
@@ -66,12 +66,10 @@ export function useCache<T>(
   return { data, loading, error, invalidate };
 }
 
-// Utility function to clear all cache
 export function clearCache() {
   memoryCache.clear();
 }
 
-// Utility function to clear expired entries
 export function clearExpiredCache() {
   const now = Date.now();
   for (const [key, entry] of memoryCache.entries()) {

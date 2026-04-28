@@ -1,10 +1,10 @@
+import re
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from .models import UserRole
 
 User = get_user_model()
-
 
 class UserSerializer(serializers.ModelSerializer):
     """Basic user serializer for profile display"""
@@ -14,7 +14,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email", "role", "phone_number", "date_joined"]
         read_only_fields = ["id", "date_joined"]
 
-
 class RegisterSerializer(serializers.ModelSerializer):
     """Serializer for user registration"""
     password = serializers.CharField(write_only=True, min_length=8)
@@ -23,6 +22,42 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["username", "email", "password", "password_confirm", "role", "phone_number"]
+    
+    def validate_phone_number(self, value):
+        """Format and validate phone number to +233 format"""
+        if not value:
+            return value
+        
+        # Remove all non-digit characters
+        digits = re.sub(r'\D', '', value)
+        
+        # Handle Ghana phone numbers
+        if digits.startswith('0'):
+            # Convert 0202729861 to +233202729861
+            if len(digits) == 10:
+                formatted = f'+233{digits[1:]}'
+                return formatted
+            else:
+                raise serializers.ValidationError("Invalid Ghana phone number format")
+        elif digits.startswith('233'):
+            # Already in Ghana format, just add +
+            if len(digits) == 12:
+                return f'+{digits}'
+            else:
+                raise serializers.ValidationError("Invalid Ghana phone number format")
+        elif digits.startswith('+233'):
+            # Already in international format - remove + and re-add to ensure consistency
+            clean_digits = digits.replace('+', '')
+            if len(clean_digits) == 12:
+                return f'+{clean_digits}'
+            else:
+                raise serializers.ValidationError("Invalid international phone number format")
+        else:
+            # For other countries, just add + if missing
+            if len(digits) >= 10:
+                return f'+{digits}'
+            else:
+                raise serializers.ValidationError("Phone number must be at least 10 digits")
     
     def validate(self, attrs):
         if attrs["password"] != attrs["password_confirm"]:
@@ -38,7 +73,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop("password_confirm")
         return User.objects.create_user(**validated_data)
 
-
 class LoginSerializer(serializers.Serializer):
     """Serializer for user login"""
     username = serializers.CharField()
@@ -53,11 +87,9 @@ class LoginSerializer(serializers.Serializer):
         
         return attrs
 
-
 class TokenRefreshSerializer(serializers.Serializer):
     """Serializer for token refresh"""
     refresh = serializers.CharField()
-
 
 class LogoutSerializer(serializers.Serializer):
     """Serializer for user logout"""

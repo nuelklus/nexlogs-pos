@@ -3,7 +3,6 @@ from django.db import transaction
 
 from .models import JobSite
 
-
 def _normalize_phone(phone: str) -> str:
     phone = (phone or "").strip()
     if not phone:
@@ -18,7 +17,6 @@ def _normalize_phone(phone: str) -> str:
         return f"{default_cc}{phone[1:]}"
 
     return f"{default_cc}{phone}"
-
 
 @transaction.atomic
 def create_job_site(

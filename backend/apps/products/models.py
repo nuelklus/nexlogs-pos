@@ -161,6 +161,7 @@ class TechnicalSpecification(models.Model):
         ('power', 'Power'),
         ('weight', 'Weight'),
         ('dimensions', 'Dimensions'),
+        ('technical', 'Technical'),
         ('other', 'Other'),
     ]
 
@@ -206,3 +207,337 @@ class ProductReview(models.Model):
 
     def __str__(self):
         return f"Review for {self.product.name} by {self.user.username}"
+
+class InventoryTransaction(models.Model):
+    """Track all inventory movements for products"""
+    TRANSACTION_TYPES = [
+        ('purchase', 'Purchase'),
+        ('sale', 'Sale'),
+        ('adjustment', 'Adjustment'),
+        ('return', 'Return'),
+        ('transfer', 'Transfer'),
+        ('damage', 'Damage/Loss'),
+    ]
+    
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='inventory_transactions')
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    quantity_change = models.IntegerField(help_text="Positive for stock in, negative for stock out")
+    quantity_before = models.PositiveIntegerField()
+    quantity_after = models.PositiveIntegerField()
+    reference = models.CharField(max_length=100, blank=True, help_text="Order number, invoice, etc.")
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['product', '-created_at'], name='inventory_product_created_idx'),
+            models.Index(fields=['transaction_type', '-created_at'], name='inventory_type_created_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.transaction_type}: {self.quantity_change}"
+
+class ProductApproval(models.Model):
+    """Track approval workflow for product changes"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    CHANGE_TYPES = [
+        ('create', 'Create Product'),
+        ('update', 'Update Product'),
+        ('delete', 'Delete Product'),
+        ('price_change', 'Price Change'),
+        ('stock_adjustment', 'Stock Adjustment'),
+    ]
+    
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='approvals', null=True, blank=True)
+    change_type = models.CharField(max_length=20, choices=CHANGE_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Store the changes as JSON
+    old_values = models.JSONField(default=dict, blank=True)
+    new_values = models.JSONField(default=dict, blank=True)
+    
+    # Approval workflow
+    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='approval_requests')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='approved_changes')
+    approval_notes = models.TextField(blank=True)
+    
+    # Timestamps
+    requested_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-requested_at']
+        indexes = [
+            models.Index(fields=['status', '-requested_at'], name='approvals_status_created_idx'),
+            models.Index(fields=['change_type', '-requested_at'], name='approvals_type_created_idx'),
+            models.Index(fields=['requested_by', '-requested_at'], name='approvals_requested_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.change_type} for {self.product.name if self.product else 'Unknown'} - {self.status}"
+
+class StockAlert(models.Model):
+    """Alerts for low stock, out of stock, etc."""
+    ALERT_TYPES = [
+        ('low_stock', 'Low Stock'),
+        ('out_of_stock', 'Out of Stock'),
+        ('overstock', 'Overstock'),
+        ('reorder_needed', 'Reorder Needed'),
+    ]
+    
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stock_alerts')
+    alert_type = models.CharField(max_length=20, choices=ALERT_TYPES)
+    current_stock = models.PositiveIntegerField()
+    threshold = models.PositiveIntegerField()
+    message = models.TextField()
+    is_resolved = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['product', 'is_resolved', '-created_at'], name='alerts_product_resolved_idx'),
+            models.Index(fields=['alert_type', 'is_resolved', '-created_at'], name='alerts_type_resolved_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.alert_type} alert for {self.product.name}"
+
+class WarehouseTransfer(models.Model):
+    """Track transfers between warehouses"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_transit', 'In Transit'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    from_warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='outgoing_transfers')
+    to_warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='incoming_transfers')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='warehouse_transfers')
+    quantity = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    tracking_number = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    
+    # Workflow
+    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='transfer_requests')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='approved_transfers')
+    
+    # Timestamps
+    requested_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-requested_at']
+        indexes = [
+            models.Index(fields=['status', '-requested_at'], name='transfers_status_created_idx'),
+            models.Index(fields=['from_warehouse', '-requested_at'], name='transfers_from_created_idx'),
+            models.Index(fields=['to_warehouse', '-requested_at'], name='transfers_to_created_idx'),
+        ]
+    
+    def __str__(self):
+        return f"Transfer {self.quantity}x {self.product.name} from {self.from_warehouse.name} to {self.to_warehouse.name}"
+
+class BulkPricing(models.Model):
+    """Bulk pricing tiers for Pro-Contractors"""
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='bulk_pricing')
+    min_quantity = models.PositiveIntegerField(help_text="Minimum quantity for this tier")
+    max_quantity = models.PositiveIntegerField(null=True, blank=True, help_text="Maximum quantity for this tier (null for no limit)")
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Discount percentage")
+    price_per_unit = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price per unit at this tier")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['min_quantity']
+        unique_together = ['product', 'min_quantity']
+        indexes = [
+            models.Index(fields=['product', 'min_quantity'], name='bulk_pricing_min_qty_idx'),
+            models.Index(fields=['is_active', 'product'], name='bulk_pricing_active_idx'),
+        ]
+    
+    def __str__(self):
+        if self.max_quantity:
+            return f"{self.product.name} - {self.min_quantity}-{self.max_quantity} units: {self.discount_percentage}% off"
+        return f"{self.product.name} - {self.min_quantity}+ units: {self.discount_percentage}% off"
+
+class JobSite(models.Model):
+    """Job sites for Pro-Contractors"""
+    name = models.CharField(max_length=200)
+    address = models.TextField()
+    city = models.CharField(max_length=100)
+    region = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20, blank=True)
+    contact_person = models.CharField(max_length=100, blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    coordinates_lat = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
+    coordinates_lng = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    # Relationships
+    pro_contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='job_sites')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['pro_contractor', 'is_active'], name='jobsite_contractor_active_idx'),
+            models.Index(fields=['city', 'region'], name='jobsite_location_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.pro_contractor.username}"
+
+class SpecialOrder(models.Model):
+    """Special orders for Pro-Contractors"""
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted'),
+        ('quoted', 'Quoted'),
+        ('approved', 'Approved'),
+        ('processing', 'Processing'),
+        ('ready', 'Ready for Pickup/Delivery'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('normal', 'Normal'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    special_instructions = models.TextField(blank=True)
+    
+    # Pricing
+    estimated_budget = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    quoted_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    final_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    
+    # Status and Priority
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='normal')
+    
+    # Delivery Information
+    delivery_method = models.CharField(max_length=20, choices=[
+        ('pickup', 'Pickup'),
+        ('delivery', 'Delivery'),
+        ('site_delivery', 'Site Delivery'),
+    ], default='pickup')
+    delivery_address = models.TextField(blank=True)
+    preferred_delivery_date = models.DateField(null=True, blank=True)
+    
+    # Relationships
+    pro_contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='special_orders')
+    job_site = models.ForeignKey(JobSite, on_delete=models.SET_NULL, null=True, blank=True, related_name='special_orders')
+    
+    # Admin assignment
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_special_orders')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    quoted_at = models.DateTimeField(null=True, blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['pro_contractor', '-created_at'], name='special_orders_contractor_idx'),
+            models.Index(fields=['status', '-created_at'], name='special_orders_status_idx'),
+            models.Index(fields=['priority', 'status'], name='special_orders_priority_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.pro_contractor.username}"
+
+class SpecialOrderItem(models.Model):
+    """Items in a special order"""
+    special_order = models.ForeignKey(SpecialOrder, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['id']
+    
+    def __str__(self):
+        return f"{self.quantity}x {self.product.name} in {self.special_order.title}"
+    
+    @property
+    def subtotal(self):
+        return self.quantity * self.unit_price * (1 - self.discount_percentage / 100)
+
+class ProContractorProfile(models.Model):
+    """Extended profile for Pro-Contractors"""
+    VERIFICATION_STATUS_CHOICES = [
+        ('pending', 'Pending Verification'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected'),
+        ('suspended', 'Suspended'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='pro_contractor_profile')
+    business_name = models.CharField(max_length=200)
+    business_license = models.CharField(max_length=100, blank=True)
+    tax_id = models.CharField(max_length=50, blank=True)
+    
+    # Verification
+    verification_status = models.CharField(max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending')
+    verification_documents = models.JSONField(default=list, blank=True)  # Store document URLs
+    verified_at = models.DateTimeField(null=True, blank=True)
+    verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_pro_contractors')
+    
+    # Credit and Payment
+    credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    payment_terms = models.CharField(max_length=100, default='Net 30')
+    
+    # Preferences
+    default_delivery_method = models.CharField(max_length=20, choices=[
+        ('pickup', 'Pickup'),
+        ('delivery', 'Delivery'),
+    ], default='pickup')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['verification_status', '-created_at'], name='pro_profile_verification_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.business_name} ({self.user.username})"
+    
+    @property
+    def is_verified(self):
+        return self.verification_status == 'verified'
+    
+    @property
+    def available_credit(self):
+        return self.credit_limit - self.current_balance

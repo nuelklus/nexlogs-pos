@@ -19,7 +19,7 @@ export default function LocationDemo() {
           📍 Location Picker Demo
         </h1>
 
-        {/* Current Selection */}
+        {}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold text-brand-charcoal mb-4">
             Current Selection
@@ -40,7 +40,7 @@ export default function LocationDemo() {
           </div>
         </div>
 
-        {/* Warehouse Selector */}
+        {}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold text-brand-charcoal mb-4">
             Select Warehouse
@@ -78,7 +78,7 @@ export default function LocationDemo() {
           </div>
         </div>
 
-        {/* Delivery Areas */}
+        {}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold text-brand-charcoal mb-4">
             Delivery Areas for {selectedWarehouse.name}
@@ -96,7 +96,7 @@ export default function LocationDemo() {
           </div>
         </div>
 
-        {/* Simplified How It Works */}
+        {}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold text-brand-charcoal mb-4">
             🎯 Simple Location Picker
@@ -132,25 +132,24 @@ export default function LocationDemo() {
           </div>
         </div>
 
-        {/* Technical Details */}
+        {}
         <div className="bg-white rounded-lg shadow-md p-6 mt-8">
           <h2 className="text-xl font-semibold text-brand-charcoal mb-4">
             🔧 Technical Implementation
           </h2>
           <div className="bg-gray-50 rounded-lg p-4">
             <pre className="text-sm text-gray-700 overflow-x-auto">
-{`// Context Usage
+{`
 import { useLocation } from '@/contexts/LocationContext';
 
 const { 
-  selectedWarehouse,           // Currently selected warehouse
-  setSelectedWarehouse,         // Function to change warehouse
-  warehouses,                // All available warehouses
-  deliveryEstimate,           // Current delivery estimate
-  updateDeliveryEstimate       // Function to update delivery area
+  selectedWarehouse,           
+  setSelectedWarehouse,         
+  warehouses,                
+  deliveryEstimate,           
+  updateDeliveryEstimate       
 } = useLocation();
 
-// Example Usage
 const handleWarehouseChange = (warehouseId: string) => {
   const warehouse = warehouses.find(w => w.id === warehouseId);
   setSelectedWarehouse(warehouse);

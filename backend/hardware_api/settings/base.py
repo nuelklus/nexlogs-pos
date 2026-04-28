@@ -87,9 +87,11 @@ DATABASES = {
         "PORT": os.getenv("SUPABASE_DB_PORT", "5432"),
         "OPTIONS": {
             "sslmode": "require",
-            "connect_timeout": 30,
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=10000",
         },
-        "CONN_MAX_AGE": 60,
+        "CONN_MAX_AGE": 300,  # 5 minutes - longer to reduce connection churn
+        "ATOMIC_REQUESTS": False,  # Disable to reduce connection holding time
     }
 }
 
@@ -121,7 +123,7 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -137,7 +139,7 @@ SIMPLE_JWT = {
 # CORS Configuration - Comprehensive setup
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in os.getenv("DJANGO_CORS_ALLOWED_ORIGINS", 
-        "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://localhost:3006,http://localhost:3007,http://localhost:3008,http://localhost:3009,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002"
+        "http://localhost:3000,http://127.0.0.1:3000"
     ).split(",") if o.strip()
 ]
 
@@ -149,7 +151,7 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@hardware-ecommerce.com')
-ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@hardware-ecommerce.com')
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'nuelklus@gmail.com')
 
 # Template configuration
 TEMPLATES = [

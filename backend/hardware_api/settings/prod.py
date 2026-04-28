@@ -112,7 +112,7 @@ TEMPLATES = [
 # Email (using Resend API to bypass Render SMTP blocking)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Fallback to console
 DEFAULT_FROM_EMAIL = 'onboarding@resend.dev'  # Use Resend's verified domain
-ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@hardware-ecommerce.com')
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'nuelklus@gmail.com')
 
 # Resend configuration
 RESEND_API_KEY = 're_PNFLLBKF_6uwnyHsU9HeD4Z9jvN629pDj'
@@ -153,21 +153,21 @@ ALLOWED_HOSTS = [
 ]
 
 # CORS (production)
-frontend_url = os.getenv('FRONTEND_URL', 'https://hardware-ecommerce-monorepo-2.onrender.com')
+frontend_url = os.getenv('FRONTEND_URL', 'https://allshopsdepot.com')
 CORS_ALLOWED_ORIGINS = [
     frontend_url,
-    'http://localhost:3000',  # For local development
-    'http://localhost:3001',
-    'https://your-custom-domain.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
     'https://allshopsdepot.com',
     'https://www.allshopsdepot.com',
+    'https://localhost:3000',
 ]
 
 # CSRF Trusted Origins (for secure form submission)
 CSRF_TRUSTED_ORIGINS = [
     'https://allshopsdepot.com',
     'https://www.allshopsdepot.com',
-    'https://hardware-ecommerce-monorepo-2.onrender.com',
+    'https://localhost:3000',
 ]
 
 # Remove development CORS settings

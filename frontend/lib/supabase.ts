@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { apiClient } from './api'
 
-const supabaseUrl = 'https://eu-west-1.supabase.co'
+const supabaseUrl = 'https://your-project.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-key'
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -21,13 +21,12 @@ export interface ProductUploadData {
   sku?: string
 }
 
-// Generate slug from name
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9 -]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Remove multiple hyphens
+    .replace(/[^a-z0-9 -]/g, '') 
+    .replace(/\s+/g, '-') 
+    .replace(/-+/g, '-') 
     .trim()
 }
 
@@ -61,13 +60,11 @@ export async function uploadProductImage(file: File): Promise<string> {
 }
 
 export async function saveProductToDatabase(productData: ProductUploadData) {
-  // Generate slug from name
-  const slug = generateSlug(productData.name)
   
-  // Get category and brand IDs (you might need to fetch these based on names)
-  // For now, using default values - you should update this logic
-  const categoryId = 1 // Default category - you should fetch this based on category name
-  const brandId = 1 // Default brand - you should fetch this based on brand name
+  const slug = generateSlug(productData.name)
+
+  const categoryId = 1 
+  const brandId = 1 
 
   const apiProductData = {
     name: productData.name,

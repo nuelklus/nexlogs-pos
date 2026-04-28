@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { adminApi, DashboardStats, Order, Product } from '@/lib/admin-api';
+import { InventoryManagement } from '@/components/admin/InventoryManagement';
 import {
   Package,
   ShoppingCart,
@@ -37,8 +38,7 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Products state
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
@@ -55,8 +55,7 @@ export function AdminDashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [updatingProduct, setUpdatingProduct] = useState(false);
-  
-  // Orders state
+
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
@@ -105,7 +104,6 @@ export function AdminDashboard() {
     }
   };
 
-  // Order helper functions
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -258,18 +256,15 @@ export function AdminDashboard() {
     
     try {
       setUpdatingStatus(true);
-      
-      // Prepare update data
+
       const updateData: any = { status: newStatus };
-      
-      // Only update escrow status if it's different from current
+
       if (selectedEscrowStatus && selectedEscrowStatus !== selectedOrder.escrow_status) {
         updateData.escrow_status = selectedEscrowStatus;
       }
       
       const updatedOrder = await adminApi.updateOrderWithFundsVerified(selectedOrder.id, updateData);
-      
-      // Update the order in the list
+
       setOrders(prevOrders => 
         prevOrders.map(order => 
           order.id === selectedOrder.id ? updatedOrder : order
@@ -292,19 +287,16 @@ export function AdminDashboard() {
     
     try {
       setUpdatingStatus(true);
-      
-      // Generate unique 6-digit release code
+
       const releaseCode = Math.floor(100000 + Math.random() * 900000).toString();
-      
-      // Update order with funds verified data
+
       const updatedOrder = await adminApi.updateOrderWithFundsVerified(selectedOrder.id, {
         status: 'processing',
         escrow_status: 'held',
         payment_ref: paymentRef.trim(),
         release_code: releaseCode
       });
-      
-      // Update the order in the list
+
       setOrders(prevOrders => 
         prevOrders.map(order => 
           order.id === selectedOrder.id ? updatedOrder : order
@@ -338,8 +330,7 @@ export function AdminDashboard() {
       if (brandFilter) params.brand = brandFilter;
       if (statusFilter !== 'all') params.is_active = statusFilter;
       if (featuredFilter !== 'all') params.is_featured = featuredFilter;
-      
-      // Remove undefined values from params
+
       Object.keys(params).forEach(key => {
         if (params[key] === undefined || params[key] === '') {
           delete params[key];
@@ -418,8 +409,7 @@ export function AdminDashboard() {
     
     try {
       setUpdatingProduct(true);
-      
-      // Build update data object with only changed fields
+
       const updateData: any = {};
       if (editingProduct.name !== selectedProduct.name) {
         updateData.name = editingProduct.name;
@@ -478,8 +468,7 @@ export function AdminDashboard() {
       if (editingProduct.brand_id !== (selectedProduct.brand as any)?.id) {
         updateData.brand_id = editingProduct.brand_id;
       }
-      
-      // Only make API call if there are changes
+
       if (Object.keys(updateData).length === 0) {
         setShowEditModal(false);
         setSelectedProduct(null);
@@ -488,15 +477,13 @@ export function AdminDashboard() {
       }
       
       const updatedProduct = await adminApi.updateProduct(parseInt(selectedProduct.id), updateData);
-      
-      // Ensure the updated product has the correct structure
+
       const normalizedProduct = {
         ...updatedProduct,
         category: updatedProduct.category || { name: 'No Category' },
         brand: updatedProduct.brand || { name: 'No Brand' }
       };
-      
-      // Update the product in the list
+
       setProducts((prevProducts: Product[]) => 
         prevProducts.map(product => 
           product.id === selectedProduct.id ? normalizedProduct as any : product
@@ -520,8 +507,7 @@ export function AdminDashboard() {
     try {
       setUpdatingProduct(true);
       await adminApi.deleteProduct(parseInt(selectedProduct.id));
-      
-      // Remove product from list
+
       setProducts(products.filter(product => product.id !== selectedProduct.id));
       
       setShowDeleteModal(false);
@@ -587,7 +573,7 @@ export function AdminDashboard() {
 
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* Stats Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
@@ -643,7 +629,7 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Error State */}
+      {}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
@@ -665,7 +651,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Alerts */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -774,7 +760,7 @@ export function AdminDashboard() {
 
   const renderProducts = () => (
     <div className="space-y-6">
-      {/* Filters */}
+      {}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
@@ -841,7 +827,7 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Error Message */}
+      {}
       {productsError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
@@ -851,7 +837,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Products Table */}
+      {}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Product Management</h2>
@@ -1011,7 +997,7 @@ export function AdminDashboard() {
         )}
       </div>
 
-      {/* Pagination */}
+      {}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-700">
@@ -1046,7 +1032,7 @@ export function AdminDashboard() {
 
   const renderOrders = () => (
     <div className="space-y-6">
-      {/* Filters */}
+      {}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
           <div className="flex-1 relative">
@@ -1078,7 +1064,7 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Error State */}
+      {}
       {ordersError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
@@ -1100,7 +1086,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Orders Table */}
+      {}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -1249,11 +1235,12 @@ export function AdminDashboard() {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'products', label: 'Products', icon: Package },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
+    { id: 'inventory', label: 'Inventory', icon: Package },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
@@ -1268,7 +1255,7 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
@@ -1293,16 +1280,17 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Content */}
+      {}
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {activeTab === 'overview' && renderOverview()}
           {activeTab === 'products' && renderProducts()}
           {activeTab === 'orders' && renderOrders()}
+          {activeTab === 'inventory' && <InventoryManagement />}
         </div>
       </div>
 
-      {/* View Modal */}
+      {}
       {showViewModal && selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -1411,7 +1399,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {}
       {showEditModal && selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -1557,7 +1545,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Delete Modal */}
+      {}
       {showDeleteModal && selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -1593,7 +1581,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Order Details Modal */}
+      {}
       {showOrderDetails && selectedOrder && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-lg bg-white">
@@ -1669,7 +1657,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Status Update Modal */}
+      {}
       {showStatusModal && selectedOrder && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
@@ -1806,7 +1794,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Funds Verified Modal */}
+      {}
       {showFundsVerifiedModal && selectedOrder && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">

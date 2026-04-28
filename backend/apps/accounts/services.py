@@ -1,13 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.contrib.auth import authenticate
+from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from typing import Dict, Tuple, Optional
 from .models import UserRole
 
 User = get_user_model()
-
 
 class AuthService:
     """Service layer for handling authentication operations"""
@@ -44,7 +44,17 @@ class AuthService:
             phone_number=phone_number
         )
         user.set_password(password)
-        user.full_clean()
+        
+        # Validate and save
+        try:
+            user.full_clean()
+        except ValidationError as e:
+            # Convert ValidationError to dict format for API response
+            error_dict = {}
+            for field, errors in e.message_dict.items():
+                error_dict[field] = errors
+            raise ValueError(error_dict)
+        
         user.save()
         
         # Generate tokens
@@ -158,7 +168,6 @@ class AuthService:
             profile_data["is_verified_pro_contractor"] = getattr(user, 'is_verified_pro_contractor', False)
         
         return profile_data
-
 
 # Legacy function for backward compatibility
 @transaction.atomic

@@ -104,7 +104,6 @@ def dashboard_stats(request):
             'error': f'Failed to fetch dashboard stats: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def admin_orders(request):
@@ -177,7 +176,6 @@ def admin_orders(request):
         return Response({
             'error': f'Failed to fetch orders: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated, IsAdminUser])
@@ -274,7 +272,6 @@ def admin_order_detail(request, order_id):
             'error': f'Failed to process order: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def admin_inventory(request):
@@ -359,7 +356,6 @@ def admin_inventory(request):
             'error': f'Failed to fetch inventory: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def admin_restock_product(request, product_id):
@@ -436,7 +432,6 @@ def admin_restock_product(request, product_id):
         return Response({
             'error': f'Failed to restock: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated, IsAdminUser])

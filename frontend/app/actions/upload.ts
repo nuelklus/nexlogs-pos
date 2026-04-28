@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 
-// Supabase configuration (server-side)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
@@ -21,15 +20,13 @@ if (!supabaseUrl || !supabaseServiceKey) {
   throw new Error(`Missing Supabase environment variables. URL: ${!!supabaseUrl}, Key: ${!!supabaseServiceKey}`)
 }
 
-// Create Supabase client with service role key (bypasses RLS)
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-// Test Supabase connection
 export async function testSupabaseConnection() {
   console.log('🧪 Testing Supabase connection...')
   
   try {
-    // Test by listing buckets
+    
     const { data, error } = await supabase.storage.listBuckets()
     console.log('📦 Buckets list:', data)
     console.log('❌ Buckets error:', error)
@@ -38,8 +35,7 @@ export async function testSupabaseConnection() {
       console.error('❌ Supabase connection failed:', error)
       return { success: false, error: error.message }
     }
-    
-    // Test if product-images bucket exists
+
     const productImagesBucket = data?.find(bucket => bucket.name === 'product-images')
     console.log('📁 product-images bucket exists:', !!productImagesBucket)
     
@@ -61,7 +57,7 @@ export async function uploadProductImage(formData: FormData): Promise<{ success:
   console.log('🚀 Starting uploadProductImage Server Action')
   
   try {
-    // First test Supabase connection
+    
     console.log('🧪 Testing Supabase connection before upload...')
     const connectionTest = await testSupabaseConnection()
     if (!connectionTest.success) {
@@ -82,32 +78,27 @@ export async function uploadProductImage(formData: FormData): Promise<{ success:
       return { success: false, error: 'No image file provided' }
     }
 
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       console.error('❌ Invalid file type:', file.type)
       return { success: false, error: `Invalid file type: ${file.type}. Only JPEG, PNG, and WebP are allowed.` }
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       console.error('❌ File too large:', file.size, 'bytes (max: 5MB)')
       return { success: false, error: `File too large: ${Math.round(file.size / 1024 / 1024)}MB. Maximum size is 5MB.` }
     }
 
-    // Check environment variables
     console.log('🔧 Checking Supabase configuration...')
     console.log('Supabase URL:', supabaseUrl)
     console.log('Service Key exists:', !!supabaseServiceKey)
 
-    // Generate unique filename
     const fileExt = file.name.split('.').pop()
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
     const filePath = `product-images/${fileName}`
 
     console.log('📤 Uploading image to Supabase:', filePath)
 
-    // Upload to Supabase Storage
     console.log('🌐 Making Supabase API call...')
     console.log('Bucket: product-images')
     console.log('File path:', filePath)
@@ -136,7 +127,6 @@ export async function uploadProductImage(formData: FormData): Promise<{ success:
 
     console.log('✅ Supabase upload successful:', data)
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('product-images')
       .getPublicUrl(filePath)
@@ -169,7 +159,7 @@ export async function createProduct(productData: {
   console.log('📦 Product data:', productData)
   
   try {
-    // Get auth token from cookies
+    
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
 
@@ -181,10 +171,9 @@ export async function createProduct(productData: {
       return { success: false, error: 'Authentication required' }
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com'
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https:
     console.log('🌐 Calling backend API:', `${apiUrl}/api/products/create/`)
 
-    // Call backend API
     const response = await fetch(`${apiUrl}/api/products/create/`, {
       method: 'POST',
       headers: {
@@ -196,7 +185,7 @@ export async function createProduct(productData: {
         slug: productData.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-'),
         price: productData.price,
         category: parseInt(productData.category),
-        brand: 1, // Default brand - you might want to make this dynamic
+        brand: 1, 
         condition: 'new',
         dimensions: 'Standard',
         track_stock: true,
@@ -223,8 +212,7 @@ export async function createProduct(productData: {
 
     const result = await response.json()
     console.log('✅ Product created successfully:', result)
-    
-    // Revalidate the products page to show new product
+
     revalidatePath('/')
     revalidatePath('/products')
     
@@ -243,7 +231,7 @@ export async function uploadProductComplete(formData: FormData) {
   console.log('🚀 Starting uploadProductComplete Server Action')
   
   try {
-    // Step 1: Upload image
+    
     console.log('📤 Step 1: Uploading image...')
     const imageResult = await uploadProductImage(formData)
     
@@ -254,7 +242,6 @@ export async function uploadProductComplete(formData: FormData) {
       return imageResult
     }
 
-    // Step 2: Create product with image URL
     console.log('📦 Step 2: Creating product...')
     const productData = {
       name: formData.get('name') as string,
@@ -277,8 +264,7 @@ export async function uploadProductComplete(formData: FormData) {
     }
 
     console.log('✅ Complete upload successful!')
-    
-    // Step 3: Redirect to success page
+
     console.log('🔄 Redirecting to products page...')
     redirect('/products?success=Product created successfully')
 

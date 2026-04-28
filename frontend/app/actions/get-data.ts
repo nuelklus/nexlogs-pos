@@ -2,13 +2,12 @@
 
 import { cookies } from 'next/headers'
 
-// Fetch categories from backend
 export async function getCategories() {
   try {
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
     console.log('token - token', token)
-    const response = await fetch('https://hardware-ecommerce-monorepo.onrender.com/api/products/categories/', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/categories/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -28,13 +27,12 @@ export async function getCategories() {
   }
 }
 
-// Fetch brands from backend
 export async function getBrands() {
   try {
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
 
-    const response = await fetch('https://hardware-ecommerce-monorepo.onrender.com/api/products/brands/', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/brands/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

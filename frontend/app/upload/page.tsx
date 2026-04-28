@@ -11,17 +11,14 @@ export default function UploadPage() {
   const { isAuthenticated, user, isLoading } = useAuth()
   const router = useRouter()
 
-  // Check if user has admin privileges
   const isAdmin = user?.role === 'ADMIN'
 
-  // Redirect to login if not authenticated (only after loading is complete)
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login?redirect=/upload')
     }
   }, [isAuthenticated, isLoading, router])
 
-  // Debug: Log user info to help troubleshoot
   useEffect(() => {
     if (user) {
       console.log('User info:', user)
@@ -30,7 +27,6 @@ export default function UploadPage() {
     }
   }, [user, isAdmin])
 
-  // Show loading state while auth is initializing
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
@@ -50,7 +46,6 @@ export default function UploadPage() {
     )
   }
 
-  // Early return for unauthenticated users (only after loading)
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-white">

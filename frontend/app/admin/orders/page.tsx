@@ -143,8 +143,7 @@ function OrdersManagementContent() {
     try {
       setUpdatingStatus(true);
       const updatedOrder = await adminApi.updateOrderStatus(selectedOrder.id, newStatus);
-      
-      // Update the order in the list
+
       setOrders(orders.map(order => 
         order.id === selectedOrder.id ? updatedOrder : order
       ));
@@ -159,7 +158,6 @@ function OrdersManagementContent() {
     }
   };
 
-  // Only allow admin access
   if (user?.role !== 'ADMIN') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -176,7 +174,7 @@ function OrdersManagementContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
@@ -199,7 +197,7 @@ function OrdersManagementContent() {
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* Filters */}
+          {}
           <div className="bg-white rounded-lg shadow mb-6">
             <div className="p-6">
               <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
@@ -233,7 +231,7 @@ function OrdersManagementContent() {
             </div>
           </div>
 
-          {/* Error State */}
+          {}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-center">
@@ -255,7 +253,7 @@ function OrdersManagementContent() {
             </div>
           )}
 
-          {/* Orders Table */}
+          {}
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -368,7 +366,7 @@ function OrdersManagementContent() {
             </div>
           </div>
 
-          {/* Pagination */}
+          {}
           <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-gray-700">
               Showing <span className="font-medium">1</span> to <span className="font-medium">{orders.length}</span> of{' '}
@@ -382,7 +380,7 @@ function OrdersManagementContent() {
         </div>
       </div>
 
-      {/* Order Details Modal */}
+      {}
       {showOrderDetails && selectedOrder && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-lg bg-white">
@@ -458,7 +456,7 @@ function OrdersManagementContent() {
         </div>
       )}
 
-      {/* Status Update Modal */}
+      {}
       {showStatusModal && selectedOrder && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">

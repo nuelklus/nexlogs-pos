@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Order, OrderItem, OrderStatusUpdate
-
+from apps.products.models import Product
+from .services import OrderService
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(read_only=True)
@@ -14,14 +15,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'price', 'quantity', 'subtotal'
         ]
 
-
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
     created_by = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = OrderStatusUpdate
         fields = ['status', 'notes', 'created_at', 'created_by']
-
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
@@ -41,13 +40,12 @@ class OrderSerializer(serializers.ModelSerializer):
             'postal_code', 'order_notes', 'total_amount', 'shipping_cost', 
             'tax_amount', 'grand_total', 'payment_method', 'payment_status', 
             'status', 'created_at', 'updated_at', 'tracking_number', 
-            'estimated_delivery', 'items', 'status_updates'
+            'estimated_delivery', 'release_code', 'items', 'status_updates'
         ]
         read_only_fields = [
             'id', 'order_number', 'user', 'grand_total', 'created_at', 
             'updated_at', 'tracking_number', 'estimated_delivery'
         ]
-
 
 class CreateOrderSerializer(serializers.ModelSerializer):
     items = serializers.ListField(
@@ -58,33 +56,28 @@ class CreateOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'first_name', 'last_name', 'email', 'phone', 
+            'user', 'first_name', 'last_name', 'email', 'phone', 
             'shipping_address', 'city', 'region', 'postal_code', 
             'order_notes', 'total_amount', 'payment_method', 'items'
         ]
 
     def create(self, validated_data):
-        items_data = validated_data.pop('items')
+        """
+        Create order with automatic inventory reduction
+        """
+        print(f"🛒 Creating order with inventory management...")
         
-        # Create order
-        order = Order.objects.create(**validated_data)
+        # Check inventory availability before creating order
+        items_data = validated_data.get('items', [])
+        try:
+            OrderService.check_inventory_availability(items_data)
+            print(f"✅ Inventory check passed for {len(items_data)} items")
+        except serializers.ValidationError as e:
+            print(f"❌ Inventory check failed: {e}")
+            raise e
         
-        # Create order items
-        for item_data in items_data:
-            OrderItem.objects.create(
-                order=order,
-                product_id=item_data['product_id'],
-                product_name=item_data['product_name'],
-                product_sku=item_data['product_sku'],
-                price=item_data['price'],
-                quantity=item_data['quantity']
-            )
+        # Create order with inventory reduction
+        order = OrderService.create_order_with_inventory_reduction(validated_data)
         
-        # Create initial status update
-        OrderStatusUpdate.objects.create(
-            order=order,
-            status='pending',
-            notes='Order placed successfully'
-        )
-        
+        print(f"✅ Order {order.order_number} created successfully with inventory reduction")
         return order

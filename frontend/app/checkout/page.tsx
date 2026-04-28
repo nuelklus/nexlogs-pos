@@ -46,17 +46,15 @@ export default function CheckoutPage() {
 
   const [orderData, setOrderData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  // Redirect to login if not authenticated (only after auth is loaded)
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      // Store checkout as intended destination
+      
       sessionStorage.setItem('previousPage', '/checkout');
       window.location.href = '/login?redirect=/checkout';
     }
   }, [isAuthenticated, authLoading]);
 
-  // Pre-fill user info if available
   useEffect(() => {
     if (user && isAuthenticated) {
       setShippingInfo(prev => ({
@@ -69,7 +67,13 @@ export default function CheckoutPage() {
     }
   }, [user, isAuthenticated]);
 
-  // Show loading while checking authentication
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setShippingInfo({
+      ...shippingInfo,
+      [e.target.name]: e.target.value
+    });
+  };
+
   if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -81,33 +85,45 @@ export default function CheckoutPage() {
     );
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setShippingInfo({
-      ...shippingInfo,
-      [e.target.name]: e.target.value
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsProcessing(true);
 
     try {
-      // Validate form
-      if (!shippingInfo.firstName || !shippingInfo.lastName || !shippingInfo.email || 
-          !shippingInfo.phone || !shippingInfo.address) {
-        throw new Error('Please fill in all required fields');
+      
+      const requiredFields = {
+        firstName: 'First Name',
+        lastName: 'Last Name',
+        email: 'Email Address',
+        phone: 'Phone Number',
+        address: 'Delivery Address',
+        city: 'City',
+        region: 'Region'
+      };
+
+      for (const [field, label] of Object.entries(requiredFields)) {
+        if (!shippingInfo[field as keyof typeof shippingInfo]) {
+          throw new Error(`${label} is required`);
+        }
       }
 
-      // Prepare order data
-      console.log('🛒 Preparing order data:', {
-        shippingInfo,
-        paymentMethod,
-        total,
-        items: items,
-        itemCount
-      });
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(shippingInfo.email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      const phoneRegex = /^(\+233|0)[0-9]{9}$/;
+      if (!phoneRegex.test(shippingInfo.phone.replace(/\s/g, ''))) {
+        throw new Error('Please enter a valid Ghana phone number (e.g., +233 XX XXX XXXX or 0XX XXX XXXX)');
+      }
+
+      console.log('=== DETAILED ORDER DEBUG ===');
+      console.log('1. Shipping Info:', JSON.stringify(shippingInfo, null, 2));
+      console.log('2. Payment Method:', paymentMethod);
+      console.log('3. Total Amount:', total);
+      console.log('4. Cart Items:', JSON.stringify(items, null, 2));
+      console.log('5. Item Count:', itemCount);
 
       const orderRequest: CreateOrderRequest = {
         first_name: shippingInfo.firstName,
@@ -130,17 +146,29 @@ export default function CheckoutPage() {
         }))
       };
 
-      console.log('🛒 Order request data:', orderRequest);
+      console.log('6. Final Order Request:', JSON.stringify(orderRequest, null, 2));
+      console.log('7. Order Request Types:', {
+        first_name: typeof orderRequest.first_name,
+        last_name: typeof orderRequest.last_name,
+        email: typeof orderRequest.email,
+        phone: typeof orderRequest.phone,
+        shipping_address: typeof orderRequest.shipping_address,
+        city: typeof orderRequest.city,
+        region: typeof orderRequest.region,
+        postal_code: typeof orderRequest.postal_code,
+        order_notes: typeof orderRequest.order_notes,
+        total_amount: typeof orderRequest.total_amount,
+        payment_method: typeof orderRequest.payment_method,
+        items: typeof orderRequest.items,
+        items_length: orderRequest.items.length
+      });
 
-      // Create order via API
       console.log('🛒 Sending order to API...');
       const order = await ordersApi.createOrder(orderRequest);
       console.log('🛒 Order created successfully:', order);
-      
-      // Store order data for confirmation page
+
       setOrderData(order);
-      
-      // Clear cart and show success
+
       clearCart();
       setOrderComplete(true);
       
@@ -152,7 +180,6 @@ export default function CheckoutPage() {
     }
   };
 
-  // Show order complete page first
   if (orderComplete) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -200,22 +227,55 @@ export default function CheckoutPage() {
               </div>
             )}
             
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-              <h3 className="font-semibold text-blue-900 mb-2">What's Next?</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• You'll receive an order confirmation email shortly</li>
-                <li>• We'll process your order within 1-2 business days</li>
-                <li>• You'll receive tracking information once shipped</li>
-                {paymentMethod === 'cod' && <li>• Payment will be collected upon delivery</li>}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+              <h3 className="font-semibold text-green-900 mb-2">
+                <DollarSign className="h-5 w-5 inline mr-2" />
+                Cash on Delivery Information
+              </h3>
+              <ul className="text-sm text-green-800 space-y-2">
+                <li className="flex items-start">
+                  <Check className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Order confirmation email sent to {shippingInfo.email}</span>
+                </li>
+                <li className="flex items-start">
+                  <Check className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>We'll process your order within 1-2 business days</span>
+                </li>
+                <li className="flex items-start">
+                  <Check className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Payment of GHS {orderData?.grand_total?.toLocaleString() || total.toLocaleString()} will be collected upon delivery</span>
+                </li>
+                <li className="flex items-start">
+                  <Check className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Please have the exact amount ready for faster delivery</span>
+                </li>
               </ul>
             </div>
             
-            <div className="flex gap-4 justify-center">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+              <h3 className="font-semibold text-blue-900 mb-2">
+                <Truck className="h-5 w-5 inline mr-2" />
+                Delivery Information
+              </h3>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p><strong>Delivery Address:</strong> {shippingInfo.address}, {shippingInfo.city}, {shippingInfo.region}</p>
+                <p><strong>Contact Number:</strong> {shippingInfo.phone}</p>
+                <p><strong>Expected Delivery:</strong> 3-5 business days after order processing</p>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/orders">
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <Truck className="h-4 w-4 mr-2" />
+                  Track Order
+                </Button>
+              </Link>
               <Link href="/products">
-                <Button>Continue Shopping</Button>
+                <Button className="w-full sm:w-auto">Continue Shopping</Button>
               </Link>
               <Link href="/">
-                <Button variant="outline">Back to Home</Button>
+                <Button variant="outline" className="w-full sm:w-auto">Back to Home</Button>
               </Link>
             </div>
           </div>
@@ -224,7 +284,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // Show empty cart message if no items (and order not complete)
   if (itemCount === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -250,7 +309,7 @@ export default function CheckoutPage() {
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
+          {}
           <div className="flex items-center mb-8">
             <Link href="/cart">
               <Button variant="outline" className="mr-4">
@@ -262,9 +321,9 @@ export default function CheckoutPage() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Checkout Form */}
+            {}
             <div className="lg:col-span-2 space-y-6">
-              {/* Shipping Information */}
+              {}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Shipping Information</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -386,11 +445,11 @@ export default function CheckoutPage() {
                 </form>
               </div>
 
-              {/* Payment Method */}
+              {}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Payment Method</h2>
                 <div className="space-y-3">
-                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer">
                     <input
                       type="radio"
                       name="payment"
@@ -400,13 +459,14 @@ export default function CheckoutPage() {
                       className="mr-3"
                     />
                     <DollarSign className="h-5 w-5 text-green-600 mr-3" />
-                    <div>
-                      <div className="font-medium">Cash on Delivery</div>
+                    <div className="flex-1">
+                      <div className="font-medium text-green-700">Cash on Delivery</div>
                       <div className="text-sm text-gray-600">Pay when you receive your order</div>
                     </div>
+                    <Badge className="bg-green-100 text-green-800">Recommended</Badge>
                   </label>
 
-                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center p-4 border border-gray-200 rounded-lg opacity-60">
                     <input
                       type="radio"
                       name="payment"
@@ -414,15 +474,17 @@ export default function CheckoutPage() {
                       checked={paymentMethod === 'mobile_money'}
                       onChange={(e) => setPaymentMethod(e.target.value as any)}
                       className="mr-3"
+                      disabled
                     />
                     <Smartphone className="h-5 w-5 text-blue-600 mr-3" />
-                    <div>
-                      <div className="font-medium">Mobile Money</div>
-                      <div className="text-sm text-gray-600">MTN, Vodafone, AirtelTigo</div>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-500">Mobile Money</div>
+                      <div className="text-sm text-gray-400">MTN, Vodafone, AirtelTigo</div>
                     </div>
-                  </label>
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-500">Coming Soon</Badge>
+                  </div>
 
-                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center p-4 border border-gray-200 rounded-lg opacity-60">
                     <input
                       type="radio"
                       name="payment"
@@ -430,23 +492,25 @@ export default function CheckoutPage() {
                       checked={paymentMethod === 'card'}
                       onChange={(e) => setPaymentMethod(e.target.value as any)}
                       className="mr-3"
+                      disabled
                     />
                     <CreditCard className="h-5 w-5 text-purple-600 mr-3" />
-                    <div>
-                      <div className="font-medium">Bank Card</div>
-                      <div className="text-sm text-gray-600">Visa, Mastercard, etc.</div>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-500">Bank Card</div>
+                      <div className="text-sm text-gray-400">Visa, Mastercard, etc.</div>
                     </div>
-                  </label>
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-500">Coming Soon</Badge>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Order Summary */}
+            {}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
                 
-                {/* Items */}
+                {}
                 <div className="space-y-4 mb-6">
                   {items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4">
@@ -473,7 +537,7 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                {/* Pricing */}
+                {}
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal ({itemCount} items)</span>
@@ -498,7 +562,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Error Display */}
+                {}
                 {error && (
                   <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <div className="flex items-center">
@@ -508,7 +572,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Place Order Button */}
+                {}
                 <Button 
                   onClick={handleSubmit}
                   className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
@@ -524,10 +588,21 @@ export default function CheckoutPage() {
                   )}
                 </Button>
 
-                {/* Security Note */}
+                {}
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center text-sm text-green-800">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    <span className="font-medium">Cash on Delivery</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-1">
+                    Pay GHS {total.toLocaleString()} when your order arrives
+                  </p>
+                </div>
+
+                {}
                 <div className="mt-4 text-center">
                   <p className="text-xs text-gray-500">
-                    🔒 Secure checkout • Your payment information is safe
+                    🔒 Secure checkout • Your information is protected
                   </p>
                 </div>
               </div>

@@ -118,8 +118,7 @@ function ProductsManagementContent() {
     
     try {
       setUpdatingProduct(true);
-      
-      // Build update data object with only changed fields
+
       const updateData: any = {};
       if (editingProduct.name !== selectedProduct.name) {
         updateData.name = editingProduct.name;
@@ -178,8 +177,7 @@ function ProductsManagementContent() {
       if (editingProduct.brand_id !== (typeof selectedProduct.brand === 'string' ? undefined : selectedProduct.brand?.id)) {
         updateData.brand_id = editingProduct.brand_id;
       }
-      
-      // Only make API call if there are changes
+
       if (Object.keys(updateData).length === 0) {
         setShowEditModal(false);
         setSelectedProduct(null);
@@ -188,15 +186,13 @@ function ProductsManagementContent() {
       }
       
       const updatedProduct = await adminApi.updateProduct(parseInt(selectedProduct.id), updateData);
-      
-      // Ensure the updated product has the correct structure
+
       const normalizedProduct = {
         ...updatedProduct,
         category: updatedProduct.category || { name: 'No Category' },
         brand: updatedProduct.brand || { name: 'No Brand' }
       };
-      
-      // Update the product in the list
+
       setProducts(products.map(product => 
         product.id === selectedProduct.id ? normalizedProduct as any : product
       ) as any);
@@ -218,8 +214,7 @@ function ProductsManagementContent() {
     try {
       setUpdatingProduct(true);
       await adminApi.deleteProduct(parseInt(selectedProduct.id));
-      
-      // Remove product from list
+
       setProducts(products.filter(product => product.id !== selectedProduct.id));
       
       setShowDeleteModal(false);
@@ -274,7 +269,6 @@ function ProductsManagementContent() {
     }
   };
 
-  // Only allow admin access
   if (user?.role !== 'ADMIN') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -292,7 +286,7 @@ function ProductsManagementContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
@@ -310,7 +304,7 @@ function ProductsManagementContent() {
           </div>
         </div>
 
-        {/* Filters */}
+        {}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
@@ -377,7 +371,7 @@ function ProductsManagementContent() {
           </div>
         </div>
 
-        {/* Error Message */}
+        {}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <div className="flex items-center">
@@ -387,7 +381,7 @@ function ProductsManagementContent() {
           </div>
         )}
 
-        {/* Products Table */}
+        {}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -535,7 +529,7 @@ function ProductsManagementContent() {
           )}
         </div>
 
-        {/* Pagination */}
+        {}
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-gray-700">
@@ -567,7 +561,7 @@ function ProductsManagementContent() {
         )}
       </div>
 
-      {/* View Modal */}
+      {}
       {showViewModal && selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -676,7 +670,7 @@ function ProductsManagementContent() {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {}
       {showEditModal && selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -892,7 +886,7 @@ function ProductsManagementContent() {
         </div>
       )}
 
-      {/* Delete Modal */}
+      {}
       {showDeleteModal && selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">

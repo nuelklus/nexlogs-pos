@@ -1,5 +1,7 @@
 import { apiClient } from './api';
 
+import { Order as UnifiedOrder, CreateOrderRequest as UnifiedCreateOrderRequest, OrderItem as UnifiedOrderItem } from '@/types/order';
+
 export interface OrderItem {
   product_id: string;
   product_name: string;
@@ -80,5 +82,29 @@ export const ordersApi = {
         notes
       }
     });
+  },
+
+  trackOrder: async (orderNumber: string): Promise<any> => {
+    const response = await apiClient.request(`/orders/${orderNumber}/track/`, {
+      method: 'GET',
+    });
+    return response;
+  },
+
+  confirmDelivery: async (orderNumber: string, releaseCode: string): Promise<any> => {
+    const response = await apiClient.request(`/orders/${orderNumber}/confirm-delivery/`, {
+      method: 'POST',
+      data: {
+        release_code: releaseCode
+      }
+    });
+    return response;
+  },
+
+  getOrderDetails: async (orderNumber: string): Promise<any> => {
+    const response = await apiClient.request(`/orders/${orderNumber}/`, {
+      method: 'GET',
+    });
+    return response;
   }
 };

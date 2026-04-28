@@ -4,15 +4,13 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 
-// Simple upload without Supabase for testing
 export async function uploadProductCompleteSimple(formData: FormData) {
   console.log('🚀🚀🚀 Simple upload test - no Supabase - UPDATED')
   console.log('📝 FormData received:', formData)
   
   try {
     console.log('🔍 Starting try block...')
-    
-    // Get form data
+
     console.log('📋 Extracting form data...')
     const name = formData.get('name') as string
     const price = formData.get('price') as string
@@ -36,17 +34,15 @@ export async function uploadProductCompleteSimple(formData: FormData) {
 
     console.log('✅ Basic validation passed')
 
-    // Create product without image for now
     const productData = {
       name,
       price,
       category,
       description,
       sku,
-      image_url: 'https://via.placeholder.com/300x300.png?text=Product+Image', // Placeholder
+      image_url: 'https:
     }
 
-    // Get auth token
     console.log('🔐 Getting auth token...')
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
@@ -61,7 +57,7 @@ export async function uploadProductCompleteSimple(formData: FormData) {
     }
 
     console.log('🌐 About to call backend API...')
-    console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com'}/api/products/create/`)
+    console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https:
     console.log('🎯 Product data to send:', {
       name: productData.name,
       price: productData.price,
@@ -69,9 +65,8 @@ export async function uploadProductCompleteSimple(formData: FormData) {
       brand: 1
     })
 
-    // Call backend API
     console.log('📡 Making fetch request...')
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com'}/api/products/create/`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,8 +76,8 @@ export async function uploadProductCompleteSimple(formData: FormData) {
         name: productData.name,
         slug: productData.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-'),
         price: productData.price,
-        category: parseInt(productData.category) || 1, // Use 1 as fallback
-        brand: 1, // Fixed to 1 for now
+        category: parseInt(productData.category) || 1, 
+        brand: 1, 
         condition: 'new',
         dimensions: 'Standard',
         track_stock: true,
@@ -115,8 +110,7 @@ export async function uploadProductCompleteSimple(formData: FormData) {
 
     const result = await response.json()
     console.log('✅ Product created successfully:', result)
-    
-    // Revalidate pages
+
     revalidatePath('/')
     revalidatePath('/products')
     

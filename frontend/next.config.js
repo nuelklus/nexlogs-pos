@@ -1,17 +1,64 @@
-/** @type {import('next').NextConfig} */
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   compress: true,
   poweredByHeader: false,
   eslint: {
-    ignoreDuringBuilds: true, // Skip ESLint for production builds
+    ignoreDuringBuilds: true, 
   },
   typescript: {
-    ignoreBuildErrors: true, // Skip TypeScript checks for production builds
+    ignoreBuildErrors: true, 
   },
-  
+
   // Performance optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+
+  // Bundle optimization
+  webpack: (config, { dev, isServer }) => {
+    if (!dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          default: false,
+          vendors: false,
+          framework: {
+            chunks: 'all',
+            name: 'framework',
+            test: /[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
+            priority: 40,
+            enforce: true,
+          },
+          lib: {
+            test(module) {
+              return (
+                module.size() > 160000 &&
+                /node_modules[/\\]/.test(module.identifier())
+              );
+            },
+            name(module) {
+              const crypto = require('crypto');
+              const hash = crypto.createHash('sha1');
+              hash.update(module.identifier());
+              return hash.digest('hex').substring(0, 8);
+            },
+            priority: 30,
+            minChunks: 1,
+            reuseExistingChunk: true,
+          },
+          commons: {
+            name: 'commons',
+            minChunks: 2,
+            priority: 20,
+          },
+        },
+      };
+    }
+    return config;
+  },
+
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons']
   },
@@ -38,15 +85,13 @@ const nextConfig = {
       },
     ],
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    minimumCacheTTL: 60 * 60 * 24 * 30, 
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
-  
-  // Static optimization
+
   generateEtags: true,
-  
-  // Headers for caching
+
   async headers() {
     return [
       {
@@ -69,8 +114,7 @@ const nextConfig = {
       },
     ];
   },
-  
-  // Redirects for SEO
+
   async redirects() {
     return [
       {

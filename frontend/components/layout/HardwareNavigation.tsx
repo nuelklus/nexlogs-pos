@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { useCategories, useBrands } from '@/hooks/useProducts';
 
-// Icon mapping for categories
 const getCategoryIcon = (categoryName: string) => {
   const name = categoryName.toLowerCase();
   if (name.includes('power') || name.includes('drill') || name.includes('saw')) return <Zap className="h-5 w-5" />;
@@ -41,10 +40,9 @@ export const HardwareNavigation: React.FC = () => {
   const { brands, loading: brandsLoading } = useBrands();
   const [departments, setDepartments] = useState<any[]>([]);
 
-  // Group categories by parent categories to create departments
   useEffect(() => {
     if (!categoriesLoading && categories.length > 0) {
-      // Get top-level categories (departments)
+      
       const topLevelCategories = categories.filter(cat => !cat.parent);
       
       const departmentsData = topLevelCategories.map(category => ({
@@ -54,7 +52,7 @@ export const HardwareNavigation: React.FC = () => {
         icon: getCategoryIcon(category.name),
         description: category.description || `${category.name} and supplies`,
         href: `/products?category=${category.slug}`,
-        // Get subcategories
+        
         categories: categories
           .filter(cat => cat.parent === category.id)
           .slice(0, 4)
@@ -62,11 +60,10 @@ export const HardwareNavigation: React.FC = () => {
             name: subCat.name,
             href: `/products?category=${subCat.slug}`
           })),
-        // For now, we'll skip featured products until we have that endpoint
+        
         featured: []
       }));
 
-      // Also include categories that don't have subcategories as their own departments
       const standaloneCategories = categories.filter(cat => 
         !cat.parent && 
         !categories.some(subCat => subCat.parent === cat.id)
@@ -129,7 +126,7 @@ export const HardwareNavigation: React.FC = () => {
                   </div>
                   <p className="text-sm text-gray-600">{department.description}</p>
                   
-                  {/* Main category link */}
+                  {}
                   <NavigationMenuLink asChild>
                     <Link
                       href={department.href}
@@ -139,11 +136,11 @@ export const HardwareNavigation: React.FC = () => {
                     </Link>
                   </NavigationMenuLink>
                   
-                  {/* Subcategories */}
+                  {}
                   {department.categories.length > 0 && (
                     <div className="space-y-2">
-                      {department.categories.map((category: any) => (
-                        <NavigationMenuLink asChild key={category.name}>
+                      {department.categories.map((category: any, index: number) => (
+                        <NavigationMenuLink asChild key={`${department.id}-${category.name}-${index}`}>
                           <Link
                             href={category.href}
                             className="block text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
@@ -167,7 +164,7 @@ export const HardwareNavigation: React.FC = () => {
           </NavigationMenuContent>
         </NavigationMenuItem>
         
-        {/* Brands dropdown */}
+        {}
         {!brandsLoading && brands.length > 0 && (
           <NavigationMenuItem>
             <NavigationMenuTrigger className="text-gray-700 hover:text-blue-600 font-medium bg-transparent">
@@ -175,8 +172,8 @@ export const HardwareNavigation: React.FC = () => {
             </NavigationMenuTrigger>
             <NavigationMenuContent>
               <div className="grid w-[600px] grid-cols-3 gap-4 p-6 bg-white">
-                {brands.slice(0, 12).map((brand: any) => (
-                  <NavigationMenuLink asChild key={brand.id}>
+                {brands.slice(0, 12).map((brand: any, index: number) => (
+                  <NavigationMenuLink asChild key={`brand-${brand.id || index}`}>
                     <Link
                       href={`/products?brand=${brand.slug}`}
                       className="block text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded transition-colors"

@@ -7,10 +7,8 @@ from django.core.mail import send_mail
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-
 def health(request):
     return JsonResponse({"status": "ok"})
-
 
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
@@ -84,7 +82,6 @@ def test_email_main(request):
             'config': config_info
         }, status=500)
 
-
 def api_root(request):
     """API root endpoint"""
     return JsonResponse({
@@ -98,15 +95,13 @@ def api_root(request):
             "orders": "/api/orders/",
             "shipping": "/api/shipping/",
         },
-        "docs": "https://github.com/nuelklus/hardware-ecommerce-monorepo"
+        "docs": "https://your-api-docs-url.com"
     })
-
 
 urlpatterns = [
     path("", api_root, name="api_root"),  # Root URL
     path("admin/", admin.site.urls),
     path("api/health/", health),  # Keep for backward compatibility
-    path("api/test-email/", test_email_main),  # Main test email endpoint
     path("api/", include("apps.api_urls")),
 ]
 

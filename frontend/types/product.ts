@@ -1,4 +1,4 @@
-// Product types for hardware e-commerce
+
 export interface Product {
   id: string;
   name: string;
@@ -7,8 +7,8 @@ export interface Product {
   category: string | { id: string; name: string; slug: string };
   price: number;
   currency: 'GHS';
-  image: string; // Single image URL
-  slug: string; // Added slug field
+  image: string; 
+  slug: string; 
   brand: string | { id: string; name: string; slug: string };
   rating: number;
   reviewCount: number;
@@ -16,13 +16,12 @@ export interface Product {
   stockStatus: StockStatus;
   warehouse: Warehouse;
   sku: string;
-  
-  // Admin-specific fields
+  weight?: string;
+
   compare_price?: number;
   cost_price?: number;
   stock_quantity?: number;
   low_stock_threshold?: number;
-  weight?: number;
   dimensions?: string;
   condition?: string;
   track_stock?: boolean;
@@ -60,13 +59,22 @@ export interface Warehouse {
   phone: string;
 }
 
-// Search and filtering types
 export interface SearchFilters {
   category?: string;
   priceRange?: [number, number];
   inStock?: boolean;
   brand?: string;
   specs?: Record<string, string>;
+  page?: number;
+  page_size?: number;
+  search?: string;
+  condition?: string;
+  is_featured?: boolean;
+  min_price?: number;
+  max_price?: number;
+  category_slug?: string;
+  brand_slug?: string;
+  ordering?: string;
 }
 
 export interface SearchResult {

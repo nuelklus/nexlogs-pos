@@ -49,14 +49,14 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       
       let newItems: CartItem[];
       if (existingItemIndex >= 0) {
-        // Update existing item quantity
+        
         newItems = state.items.map((item, index) =>
           index === existingItemIndex
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       } else {
-        // Add new item
+        
         const cartItem: CartItem = {
           id: product.id,
           name: product.name,
@@ -121,7 +121,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0, itemCount: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load cart from localStorage on mount (client-side only)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const loadCart = () => {
@@ -144,7 +143,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Save cart to localStorage with debouncing (client-side only)
   useEffect(() => {
     if (typeof window !== 'undefined' && isLoaded) {
       const timeoutId = setTimeout(() => {
@@ -154,7 +152,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         } catch (error) {
           console.error('Error saving cart to localStorage:', error);
         }
-      }, 300); // Debounce save operations
+      }, 300); 
 
       return () => clearTimeout(timeoutId);
     }

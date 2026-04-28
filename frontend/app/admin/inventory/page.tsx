@@ -82,7 +82,7 @@ function InventoryManagementContent() {
   };
 
   const handleEdit = (product: Product) => {
-    // Find the current version of the product from the products list
+    
     const currentProduct = products.find(p => p.id === product.id);
     console.log('handleEdit - product from list:', product);
     console.log('handleEdit - currentProduct from state:', currentProduct);
@@ -114,15 +114,13 @@ function InventoryManagementContent() {
       
       const newStock = currentStock + addQuantity;
       const updatedProduct = await adminApi.restockProduct(parseInt(selectedProduct.id), addQuantity);
-      
-      // Ensure the updated product has the correct structure
+
       const normalizedProduct = {
         ...updatedProduct,
         category: updatedProduct.category || { name: 'No Category' },
         brand: updatedProduct.brand || { name: 'No Brand' }
       };
-      
-      // Update the product in the list
+
       setProducts(products.map(product => 
         product.id === selectedProduct.id ? normalizedProduct as any : product
       ) as any);
@@ -143,8 +141,7 @@ function InventoryManagementContent() {
     
     try {
       setUpdatingStock(true);
-      
-      // Prepare the update data with only changed fields
+
       const updateData: Partial<Product> = {};
       
       if (editingProduct.name !== selectedProduct.name) {
@@ -165,8 +162,7 @@ function InventoryManagementContent() {
       if (editingProduct.description !== selectedProduct.description) {
         updateData.description = editingProduct.description;
       }
-      
-      // Only make API call if there are changes
+
       if (Object.keys(updateData).length === 0) {
         setShowEditModal(false);
         setSelectedProduct(null);
@@ -178,8 +174,7 @@ function InventoryManagementContent() {
       
       console.log('API Response:', updatedProduct);
       console.log('Selected Product before update:', selectedProduct);
-      
-      // Ensure the updated product has the correct structure
+
       const normalizedProduct = {
         ...updatedProduct,
         category: updatedProduct.category || { name: 'No Category' },
@@ -187,8 +182,7 @@ function InventoryManagementContent() {
       };
       
       console.log('Normalized Product:', normalizedProduct);
-      
-      // Update the product in the list
+
       setProducts(products.map(product => 
         product.id === selectedProduct.id ? normalizedProduct as any : product
       ) as any);
@@ -207,7 +201,6 @@ function InventoryManagementContent() {
   const lowStockProducts = products.filter(p => (p.stock_quantity || 0) <= (p.low_stock_threshold || 0));
   const outOfStockProducts = products.filter(p => p.stock_quantity === 0);
 
-  // Only allow admin access
   if (user?.role !== 'ADMIN') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -224,7 +217,7 @@ function InventoryManagementContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
@@ -247,7 +240,7 @@ function InventoryManagementContent() {
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0 space-y-6">
-          {/* Alerts */}
+          {}
           {!loading && (lowStockProducts.length > 0 || outOfStockProducts.length > 0) && (
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
@@ -297,7 +290,7 @@ function InventoryManagementContent() {
             </div>
           )}
 
-          {/* Filters */}
+          {}
           <div className="bg-white rounded-lg shadow">
             <div className="p-6">
               <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
@@ -329,7 +322,7 @@ function InventoryManagementContent() {
             </div>
           </div>
 
-          {/* Error State */}
+          {}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <div className="flex items-center">
@@ -351,7 +344,7 @@ function InventoryManagementContent() {
             </div>
           )}
 
-          {/* Products Table */}
+          {}
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -460,7 +453,7 @@ function InventoryManagementContent() {
             </div>
           </div>
 
-          {/* Pagination */}
+          {}
           <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-gray-700">
               Showing <span className="font-medium">1</span> to <span className="font-medium">{products.length}</span> of{' '}
@@ -474,7 +467,7 @@ function InventoryManagementContent() {
         </div>
       </div>
 
-      {/* Restock Modal */}
+      {}
       {showRestockModal && selectedProduct && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
@@ -538,7 +531,7 @@ function InventoryManagementContent() {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {}
       {showEditModal && selectedProduct && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-lg bg-white">

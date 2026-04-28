@@ -7,7 +7,6 @@ interface SupabaseConfig {
   anonKey: string
 }
 
-// Server Action for Supabase image upload
 export async function uploadImageToSupabase(
   file: File, 
   config: SupabaseConfig
@@ -15,7 +14,7 @@ export async function uploadImageToSupabase(
   console.log('🚀🚀🚀 Supabase upload starting...')
   
   try {
-    // Validate inputs
+    
     if (!file || !config.url || !config.anonKey) {
       console.error('❌ Missing required parameters')
       return { 
@@ -30,7 +29,6 @@ export async function uploadImageToSupabase(
       type: file.type
     })
 
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       console.error('❌ Invalid file type:', file.type)
@@ -40,7 +38,6 @@ export async function uploadImageToSupabase(
       }
     }
 
-    // Validate file size (5MB max)
     const maxSize = 5 * 1024 * 1024
     if (file.size > maxSize) {
       console.error('❌ File too large:', file.size)
@@ -52,17 +49,14 @@ export async function uploadImageToSupabase(
 
     console.log('✅ File validation passed')
 
-    // Create Supabase client
     const supabase = createClient(config.url, config.anonKey)
 
-    // Generate unique filename
     const fileExt = file.name.split('.').pop()
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
     const filePath = `product-images/${fileName}`
 
     console.log('📤 Uploading to Supabase Storage:', filePath)
 
-    // Upload file to Supabase
     const { data, error } = await supabase.storage
       .from('product-images')
       .upload(filePath, file, {
@@ -81,7 +75,6 @@ export async function uploadImageToSupabase(
 
     console.log('✅ File uploaded to Supabase:', data)
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('product-images')
       .getPublicUrl(filePath)
@@ -105,7 +98,6 @@ export async function uploadImageToSupabase(
   }
 }
 
-// Test Supabase connection
 export async function testSupabaseConnection(config: SupabaseConfig) {
   console.log('🔗🔗🔗 Testing Supabase connection...')
   
@@ -119,7 +111,6 @@ export async function testSupabaseConnection(config: SupabaseConfig) {
 
     const supabase = createClient(config.url, config.anonKey)
 
-    // Test connection by checking if we can list buckets
     const { data, error } = await supabase.storage.listBuckets()
 
     if (error) {

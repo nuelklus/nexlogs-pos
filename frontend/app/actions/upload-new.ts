@@ -4,15 +4,13 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 
-// NEW VERSION - completely fresh upload function
 export async function uploadProductNew(formData: FormData) {
   console.log('🆕🆕🆕 BRAND NEW UPLOAD FUNCTION STARTING')
   console.log('📝 FormData received:', formData)
   
   try {
     console.log('🔍 Starting fresh try block...')
-    
-    // Get form data
+
     console.log('📋 Extracting form data...')
     const name = formData.get('name') as string
     const price = formData.get('price') as string
@@ -36,17 +34,15 @@ export async function uploadProductNew(formData: FormData) {
 
     console.log('✅ Basic validation passed')
 
-    // Create product without image for now
     const productData = {
       name,
       price,
       category,
       description,
       sku,
-      image_url: 'https://via.placeholder.com/300x300.png?text=Product+Image',
+      image_url: 'https:
     }
 
-    // Get auth token
     console.log('🔐 Getting auth token...')
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
@@ -61,7 +57,7 @@ export async function uploadProductNew(formData: FormData) {
     }
 
     console.log('🌐 About to call backend API...')
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com'
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https:
     console.log('🔗 API URL:', `${apiUrl}/api/products/create/`)
     console.log('🎯 Product data to send:', {
       name: productData.name,
@@ -70,7 +66,6 @@ export async function uploadProductNew(formData: FormData) {
       brand: 1
     })
 
-    // Call backend API
     console.log('📡 Making fetch request...')
     console.log('🔗 Using API URL:', apiUrl)
     
@@ -84,8 +79,8 @@ export async function uploadProductNew(formData: FormData) {
         name: productData.name,
         slug: productData.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-'),
         price: productData.price,
-        category: 7, // Power Tools (ID: 7)
-        brand: 18, // Test Brand (ID: 18)
+        category: 7, 
+        brand: 18, 
         condition: 'new',
         dimensions: 'Standard',
         track_stock: true,
@@ -117,8 +112,7 @@ export async function uploadProductNew(formData: FormData) {
 
     const result = await response.json()
     console.log('✅ Product created successfully:', result)
-    
-    // Revalidate pages
+
     revalidatePath('/')
     revalidatePath('/products')
     

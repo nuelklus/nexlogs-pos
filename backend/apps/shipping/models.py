@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.db import models
 
-
 class JobSite(models.Model):
     name = models.CharField(max_length=255)
     address_line_1 = models.CharField(max_length=255)

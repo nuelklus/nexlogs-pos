@@ -44,12 +44,10 @@ export default function ProductDetailPage() {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [showAddedToCart, setShowAddedToCart] = useState(false);
 
-  // Fetch similar products from the same category
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [similarProducts, setSimilarProducts] = useState<any[]>([]);
   const [similarLoading, setSimilarLoading] = useState(false);
-  
-  // Fetch similar products when category ID changes
+
   useEffect(() => {
     const fetchSimilarProducts = async () => {
       if (!categoryId) return;
@@ -61,15 +59,13 @@ export default function ProductDetailPage() {
           category: categoryId,
           page_size: 8
         });
-        
-        // Handle Django REST Framework pagination response
+
         const products = (response as any).results || response;
         console.log('🔍 Got similar products:', products.length);
-        
-        // Transform the similar products to match HardwareCard expectations
+
         const transformedProducts = products.map((product: any) => ({
           ...product,
-          image: product.image_url || product.primary_image?.image || 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Product',
+          image: product.image_url || product.primary_image?.image || '/images/no-image-available.svg',
           price: parseFloat(product.price),
           originalPrice: product.compare_price ? parseFloat(product.compare_price) : undefined,
           category: product.category?.name || 'Unknown',
@@ -97,7 +93,6 @@ export default function ProductDetailPage() {
     fetchSimilarProducts();
   }, [categoryId]);
 
-  // Update category ID when product loads
   useEffect(() => {
     if (product?.categoryId && product.categoryId !== categoryId) {
       console.log('🔍 Setting category ID for similar products:', product.categoryId);
@@ -112,8 +107,7 @@ export default function ProductDetailPage() {
     try {
       addToCart(product, quantity);
       setShowAddedToCart(true);
-      
-      // Hide the success message after 3 seconds
+
       setTimeout(() => {
         setShowAddedToCart(false);
       }, 3000);
@@ -128,16 +122,15 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = () => {
     if (!product || product.stockStatus === 'out_of_stock') return;
-    
-    // Add to cart first, then redirect to checkout
+
     addToCart(product, quantity);
     console.log(`Buy now: ${quantity} of ${product.name}`);
-    // TODO: Redirect to checkout page
-    // router.push('/checkout');
+    
+    router.push('/checkout');
   };
 
   const handleQuickAdd = (productId: string, quantity: number) => {
-    // Find the product in similar products
+    
     const productToAdd = similarProducts.find(p => p.id === productId);
     if (productToAdd) {
       addToCart(productToAdd, quantity);
@@ -153,7 +146,6 @@ export default function ProductDetailPage() {
     setQuantity(prev => Math.max(1, prev - 1));
   };
 
-  // Filter out the current product from similar products
   const filteredSimilarProducts = similarProducts.filter(p => p.id !== product?.id);
 
   if (loading) {
@@ -211,7 +203,7 @@ export default function ProductDetailPage() {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
+        {}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
           <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
           <ChevronRight className="h-4 w-4" />
@@ -221,7 +213,7 @@ export default function ProductDetailPage() {
         </nav>
 
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Product Images */}
+          {}
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-lg">
               <Image
@@ -231,8 +223,7 @@ export default function ProductDetailPage() {
                 className="object-cover hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 768px) 100vw, 50vw"
                 priority
-                unoptimized={product.image.includes('via.placeholder.com')}
-              />
+                              />
               {product.stockStatus === 'low_stock' && (
                 <Badge className="absolute top-4 left-4 bg-yellow-500 text-white">
                   Low Stock
@@ -245,7 +236,7 @@ export default function ProductDetailPage() {
               )}
             </div>
             
-            {/* Action Buttons */}
+            {}
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="flex-1">
                 <Heart className="h-4 w-4 mr-2" />
@@ -258,9 +249,9 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Product Details */}
+          {}
           <div className="space-y-6">
-            {/* Title and Price */}
+            {}
             <div>
               <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">{product.name}</h1>
               <div className="flex items-center gap-4 mb-4">
@@ -275,7 +266,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Rating */}
+            {}
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
@@ -296,7 +287,7 @@ export default function ProductDetailPage() {
               <Badge variant="outline">{product.brand}</Badge>
             </div>
 
-            {/* Stock Status */}
+            {}
             <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
               {product.stockStatus === 'in_stock' ? (
                 <>
@@ -316,7 +307,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Quantity and Actions */}
+            {}
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <span className="font-medium">Quantity:</span>
@@ -369,7 +360,7 @@ export default function ProductDetailPage() {
                 </Button>
               </div>
 
-              {/* Success Message */}
+              {}
               {showAddedToCart && (
                 <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center">
@@ -382,7 +373,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Features */}
+            {}
             <div className="grid grid-cols-2 gap-4 py-6 border-t border-b">
               <div className="flex items-center space-x-3">
                 <Truck className="h-6 w-6 text-blue-600" />
@@ -414,14 +405,14 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* SKU */}
+            {}
             <div className="text-sm text-gray-600">
               SKU: <span className="font-medium">{product.sku}</span>
             </div>
           </div>
         </div>
 
-        {/* Product Details Tabs */}
+        {}
         <div className="mt-16">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
@@ -489,7 +480,7 @@ export default function ProductDetailPage() {
           </Tabs>
         </div>
 
-        {/* Similar Products Section */}
+        {}
         <div className="mt-16">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -504,17 +495,8 @@ export default function ProductDetailPage() {
             </Link>
           </div>
 
-          {/* Debug Info */}
-          {/* <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Debug Info:</strong><br/>
-              Current Product: {product?.name}<br/>
-              Category ID: {product?.categoryId}<br/>
-              Similar Products Found: {similarProducts.length}<br/>
-              Loading: {similarLoading ? 'Yes' : 'No'}<br/>
-              Filtered Similar Products: {filteredSimilarProducts.length}
-            </p>
-          </div> */}
+          {}
+          {}
 
           {similarLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -556,7 +538,7 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          {/* Mobile View All Button */}
+          {}
           <div className="mt-8 md:hidden">
             <Link href="/products">
               <Button variant="outline" className="w-full">

@@ -38,7 +38,6 @@ export default function ProductUploadFormFixed() {
   const [isLoadingData, setIsLoadingData] = useState(true)
   const router = useRouter()
 
-  // Fetch categories and brands on component mount
   useEffect(() => {
     console.log('🔄 ProductUploadFormFixed: Component mounted, fetching data...')
     const fetchData = async () => {
@@ -91,10 +90,44 @@ export default function ProductUploadFormFixed() {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      console.log('📁 File selected:', file.name, file.type, file.size)
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        console.error('❌ Invalid file type:', file.type)
+        setUploadStatus('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.')
+        return
+      }
+      
+      // Validate file size (5MB max)
+      const maxSize = 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        console.error('❌ File too large:', file.size)
+        setUploadStatus('File too large. Maximum size is 5MB.')
+        return
+      }
+      
       setSelectedFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
-        setPreviewUrl(reader.result as string)
+        try {
+          const result = reader.result as string
+          if (result && result.startsWith('data:image/')) {
+            setPreviewUrl(result)
+            console.log('✅ File preview generated successfully')
+          } else {
+            console.error('❌ Invalid file result')
+            setUploadStatus('Invalid image file')
+          }
+        } catch (error) {
+          console.error('❌ Error reading file:', error)
+          setUploadStatus('Error reading file')
+        }
+      }
+      reader.onerror = () => {
+        console.error('❌ FileReader error')
+        setUploadStatus('Error reading file')
       }
       reader.readAsDataURL(file)
     }
@@ -125,7 +158,6 @@ export default function ProductUploadFormFixed() {
 
       console.log('📤 Calling FINAL Server Action...')
 
-      // Call FINAL Server Action
       const result = await uploadProductFinal(formData)
 
       console.log('📡 FINAL Server Action result:', result)
@@ -135,15 +167,12 @@ export default function ProductUploadFormFixed() {
         return
       }
 
-      // Success - Show success message and redirect
       console.log('✅ FINAL upload successful!')
       setUploadStatus('Product created successfully! Redirecting...')
-      
-      // Reset form
+
       form.reset()
       clearFile()
-      
-      // Redirect after 2 seconds
+
       setTimeout(() => {
         router.push('/products?success=Product created successfully')
       }, 2000)
@@ -281,7 +310,7 @@ export default function ProductUploadFormFixed() {
                 )}
               />
 
-              {/* File Upload */}
+              {}
               <div className="space-y-2">
                 <Label>Product Image</Label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">

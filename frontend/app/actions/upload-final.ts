@@ -4,12 +4,11 @@ import { cookies } from 'next/headers'
 import { uploadImageToSupabase } from './upload-supabase'
 import { validateSupabaseConfig } from '@/config/supabase'
 
-// Final Server Action for product upload with Supabase image storage
 export async function uploadProductFinal(formData: FormData) {
   console.log('🔥🔥🔥 FINAL UPLOAD STARTING (SUPABASE VERSION)')
   
   try {
-    // Get form data
+    
     const name = formData.get('name') as string
     const price = formData.get('price') as string
     const category = formData.get('category') as string
@@ -19,7 +18,6 @@ export async function uploadProductFinal(formData: FormData) {
     const imageFile = formData.get('image') as File
     const imageUrl = formData.get('image_url') as string
 
-    // Validate required form fields
     if (!name || !price || !category || !brand) {
       console.error('❌ Missing required form fields')
       return { success: false, error: 'Missing required fields: name, price, category, or brand' }
@@ -36,10 +34,9 @@ export async function uploadProductFinal(formData: FormData) {
       imageUrl: imageUrl || 'none'
     })
 
-    // Handle image upload to Supabase
     let finalImageUrl: string | undefined = imageUrl
     if (imageFile && imageFile.size > 0) {
-      console.log('🖼️🖼️🖼️ Uploading image to Supabase...')
+      console.log('🖼️🖼️🖼️ Uploading image...')
       
       try {
         const supabaseConfig = validateSupabaseConfig()
@@ -52,16 +49,16 @@ export async function uploadProductFinal(formData: FormData) {
           console.error('❌ Supabase upload failed:', uploadResult.error)
           return { success: false, error: `Image upload failed: ${uploadResult.error}` }
         }
-      } catch (configError) {
-        console.error('❌ Supabase configuration error:', configError)
-        return { 
-          success: false, 
-          error: configError instanceof Error ? configError.message : 'Supabase configuration error' 
-        }
+      } catch (supabaseError) {
+        console.warn('⚠️ Supabase not configured, using placeholder image')
+        console.error('❌ Supabase configuration error:', supabaseError)
+        
+        // Use a placeholder image when Supabase is not configured
+        finalImageUrl = 'https://via.placeholder.com/300x200.png?text=Product+Image'
+        console.log('📷 Using placeholder image:', finalImageUrl)
       }
     }
 
-    // Get auth token
     console.log('🔐 Getting auth token...')
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
@@ -73,20 +70,19 @@ export async function uploadProductFinal(formData: FormData) {
       return { success: false, error: 'Authentication required' }
     }
 
-    // Create product payload to match backend serializer
     const requestData = {
       name: name.trim(),
       price: parseFloat(price),
       category: parseInt(category),
-      brand: parseInt(brand), // Use brand from form
+      brand: parseInt(brand), 
       description: description?.trim() || 'No description provided',
       short_description: description?.trim() || 'No description provided',
-      sku: sku?.trim() || `SKU-${Date.now()}`, // Generate SKU if empty
+      sku: sku?.trim() || `SKU-${Date.now()}`, 
       slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
       condition: 'new',
       weight: 1.0,
-      dimensions: '10x10x10', // Backend expects string, not object
-      image_url: finalImageUrl, // Include Supabase image URL directly
+      dimensions: '10x10x10', 
+      image_url: finalImageUrl, 
       track_stock: true,
       stock_quantity: 10,
       low_stock_threshold: 5,
@@ -99,11 +95,8 @@ export async function uploadProductFinal(formData: FormData) {
 
     console.log('📦 Product payload:', requestData)
 
-    // No need for additional validation since we validated above
-
-    // Call backend API
     console.log('🌐 Calling backend API...')
-    const response = await fetch('https://hardware-ecommerce-monorepo.onrender.com/api/products/create/', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/admin/create/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

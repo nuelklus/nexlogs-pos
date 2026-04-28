@@ -21,14 +21,12 @@ import {
   X
 } from 'lucide-react';
 
-// Products page component that uses useSearchParams
 function ProductsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
-  
-  // Initialize filters from URL parameters
+
   const [filters, setFilters] = useState<SearchFilters>(() => {
     const initialFilters: SearchFilters = {};
     const category = searchParams.get('category');
@@ -52,7 +50,6 @@ function ProductsPageContent() {
   const { categories } = useCategories();
   const { brands } = useBrands();
 
-  // Update URL when filters change
   const updateFilters = useCallback((newFilters: SearchFilters) => {
     const params = new URLSearchParams();
     
@@ -87,7 +84,7 @@ function ProductsPageContent() {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Products</h1>
@@ -98,7 +95,7 @@ function ProductsPageContent() {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 mt-4 lg:mt-0">
-            {/* View Mode Toggle */}
+            {}
             <div className="flex border rounded-lg">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -118,7 +115,7 @@ function ProductsPageContent() {
               </Button>
             </div>
             
-            {/* Filter Toggle */}
+            {}
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
@@ -131,7 +128,7 @@ function ProductsPageContent() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters Sidebar */}
+          {}
           <div className={`${showFilters ? 'block' : 'hidden'} lg:block lg:w-64 flex-shrink-0`}>
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
               <div className="flex items-center justify-between mb-6">
@@ -144,7 +141,7 @@ function ProductsPageContent() {
                 )}
               </div>
 
-              {/* Search */}
+              {}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
                 <div className="relative">
@@ -158,7 +155,7 @@ function ProductsPageContent() {
                 </div>
               </div>
 
-              {/* Category Filter */}
+              {}
               {categories && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
@@ -181,7 +178,7 @@ function ProductsPageContent() {
                 </div>
               )}
 
-              {/* Brand Filter */}
+              {}
               {brands && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
@@ -204,7 +201,7 @@ function ProductsPageContent() {
                 </div>
               )}
 
-              {/* Price Range */}
+              {}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
                 <div className="space-y-4">
@@ -227,7 +224,7 @@ function ProductsPageContent() {
                 </div>
               </div>
 
-              {/* In Stock Filter */}
+              {}
               <div className="mb-6">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -243,7 +240,7 @@ function ProductsPageContent() {
             </div>
           </div>
 
-          {/* Products Grid */}
+          {}
           <div className="flex-1">
             {loading ? (
               <div className={viewMode === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
@@ -283,7 +280,6 @@ function ProductsPageContent() {
   );
 }
 
-// Loading skeleton component
 function ProductCardSkeleton() {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
@@ -296,7 +292,6 @@ function ProductCardSkeleton() {
   );
 }
 
-// Main page component with Suspense boundary
 export default function ProductsPage() {
   return (
     <Suspense fallback={

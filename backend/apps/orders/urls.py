@@ -1,7 +1,5 @@
 from django.urls import path
 from . import views
-from . import views_test_email
-from . import views_simple
 
 app_name = 'orders'
 
@@ -9,7 +7,8 @@ urlpatterns = [
     path('create/', views.CreateOrderView.as_view(), name='create-order'),
     path('list/', views.OrderListView.as_view(), name='order-list'),
     path('<str:order_number>/', views.OrderDetailView.as_view(), name='order-detail'),
+    path('<str:order_number>/track/', views.track_order, name='track-order'),
+    path('<str:order_number>/confirm-delivery/', views.confirm_delivery, name='confirm-delivery'),
     path('<str:order_number>/update-status/', views.update_order_status, name='update-status'),
-    path('test-email/', views_test_email.test_email, name='test-email'),
-    path('test-email-simple/', views_simple.test_email_simple, name='test-email-simple'),
+    path('<str:order_number>/cancel/', views.cancel_order_with_inventory_restoration, name='cancel-order'),
 ]

@@ -19,6 +19,7 @@ urlpatterns = [
     path('public/', views.PublicProductListView.as_view(), name='public-product-list'),
     path('', views.ProductListView.as_view(), name='product-list'),  # Admin endpoint
     path('featured/', views.featured_products, name='featured-products'),
+    path('initial-data/', views.initial_data, name='initial-data'),
     path('search/', views.product_search_suggestions, name='search-suggestions'),
     
     # Product management (admin only) - MUST come before slug patterns

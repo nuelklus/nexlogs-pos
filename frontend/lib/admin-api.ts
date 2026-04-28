@@ -1,20 +1,21 @@
-// Admin API functions for dashboard statistics and management
+
 import { apiClient } from './api';
 import Cookies from 'js-cookie';
 
-// Admin API client for authenticated admin endpoints
+import { Product } from '@/types/product';
+import { Order as UnifiedOrder } from '@/types/order';
+
 const adminApiClient = {
   request: async (endpoint: string, options: any = {}) => {
-    // Use the same token retrieval method as main API client
+    
     const getAuthToken = (): string | null => {
       if (typeof window !== 'undefined') {
-        // Try to get token from cookies first (auth.ts uses cookies)
+        
         const token = Cookies.get('access_token');
         if (token) {
           return token;
         }
-        
-        // Fallback to localStorage/sessionStorage for backward compatibility
+
         return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
       }
       return null;
@@ -66,33 +67,7 @@ export interface Order {
   items_count: number;
 }
 
-// Import the enhanced Product interface from our types
-import { Product } from '@/types/product';
-
-// Re-export for backward compatibility
 export type { Product };
-
-// Define Order interface since it's not in types/product.ts
-export interface Order {
-  id: string;
-  order_number: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  shipping_address: string;
-  city: string;
-  region: string;
-  country: string;
-  postal_code: string;
-  total_amount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
-  escrow_status: 'awaiting_payment' | 'held' | 'released' | 'non_escrow';
-  payment_method: 'cod' | 'card' | 'mobile_money';
-  created_at: string;
-  items_count: number;
-  release_code?: string;
-}
 
 export interface AdminProduct {
   id: number;
@@ -133,12 +108,11 @@ export interface AdminProduct {
 }
 
 export const adminApi = {
-  // Dashboard statistics
+  
   getDashboardStats: async (): Promise<DashboardStats> => {
     return await apiClient.request('/admin/dashboard/stats/');
   },
 
-  // Orders management
   getOrders: async (params?: {
     page?: number;
     limit?: number;
@@ -171,7 +145,6 @@ export const adminApi = {
     });
   },
 
-  // Product management (using admin endpoints)
   getProducts: async (params?: {
     page?: number;
     limit?: number;
@@ -206,7 +179,6 @@ export const adminApi = {
     }) as {message: string};
   },
 
-  // Inventory management
   getInventory: async (params?: {
     page?: number;
     limit?: number;
@@ -230,7 +202,6 @@ export const adminApi = {
     });
   },
 
-  // Customers management
   getCustomers: async (params?: {
     page?: number;
     limit?: number;
@@ -244,7 +215,6 @@ export const adminApi = {
     return await apiClient.request(`/admin/customers/${customerId}/`);
   },
 
-  // Analytics
   getSalesAnalytics: async (params?: {
     start_date?: string;
     end_date?: string;

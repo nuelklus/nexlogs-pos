@@ -39,8 +39,8 @@ import HardwareNavigation from './HardwareNavigation';
 import { apiClient } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { CartDropdown } from '@/components/cart/CartDropdown';
 
-// Search component that uses useSearchParams
 function SearchComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,15 +49,13 @@ function SearchComponent() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
 
-  // Handle search input change
   const handleSearchInputChange = (value: string) => {
     setSearchQuery(value);
-    // Clear existing timeout
+    
     if ((window as any).searchTimeout) {
       clearTimeout((window as any).searchTimeout);
     }
-    
-    // Set new timeout for search
+
     (window as any).searchTimeout = setTimeout(async () => {
       if (value.trim()) {
         setIsSearching(true);
@@ -76,7 +74,6 @@ function SearchComponent() {
     }, 300);
   };
 
-  // Handle product selection
   const handleProductSelect = (product: any) => {
     router.push(`/products/${product.slug}`);
     setIsSearchOpen(false);
@@ -84,7 +81,6 @@ function SearchComponent() {
     setSearchResults([]);
   };
 
-  // Initialize search query from URL params
   React.useEffect(() => {
     if (typeof window !== 'undefined' && window.location.pathname === '/products') {
       const searchParam = searchParams.get('search');
@@ -94,7 +90,6 @@ function SearchComponent() {
     }
   }, [searchParams]);
 
-  // Close search when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -110,7 +105,6 @@ function SearchComponent() {
 
   return (
     <>
-      {/* Main Search Input */}
       <div className="relative flex-1 max-w-xl search-container">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
@@ -119,11 +113,10 @@ function SearchComponent() {
             className="pl-12 pr-12 h-12 bg-gray-50 border-gray-300 focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow text-brand-charcoal shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             value={searchQuery}
             onChange={(e) => handleSearchInputChange(e.target.value)}
-            // Don't open modal for main search input, only for keyboard shortcut
-            // onFocus={() => setIsSearchOpen(true)}
+
           />
           
-          {/* Search suggestions dropdown */}
+          {}
           <div className={`absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg transition-all duration-200 z-50 ${
             searchQuery && (searchResults.length > 0 || isSearching) 
               ? 'opacity-100 visible' 
@@ -144,11 +137,11 @@ function SearchComponent() {
                     >
                       <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden mr-3 flex-shrink-0">
                         <img
-                          src={product.image_url || 'https://via.placeholder.com/48x48/e5e7eb/6b7280?text=No+Image'}
+                          src={product.image_url || 'https://via.placeholder.com/300x200'}
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48x48/e5e7eb/6b7280?text=No+Image';
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200';
                           }}
                         />
                       </div>
@@ -187,7 +180,7 @@ function SearchComponent() {
         </div>
       </div>
 
-      {/* Search Modal (for keyboard shortcut) */}
+      {}
       <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
         <DialogTrigger className="hidden" />
         <DialogContent className="p-0 max-w-2xl">
@@ -216,11 +209,11 @@ function SearchComponent() {
                     >
                       <div className="w-10 h-10 bg-gray-100 rounded overflow-hidden mr-3 flex-shrink-0">
                         <img
-                          src={product.image_url || 'https://via.placeholder.com/40x40/e5e7eb/6b7280?text=No+Image'}
+                          src={product.image_url || 'https://via.placeholder.com/300x200'}
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40x40/e5e7eb/6b7280?text=No+Image';
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200';
                           }}
                         />
                       </div>
@@ -255,42 +248,44 @@ export const Header: React.FC = () => {
   const { itemCount: cartItemCount } = useCart();
   const [isClient, setIsClient] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated, user, logout } = useAuth();
+  const { user, isAuthenticated, logout, isLoading } = useAuth();
   const { selectedWarehouse, setSelectedWarehouse, warehouses } = useLocation();
   const router = useRouter();
 
-  // Prevent hydration mismatch
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Store current page in session storage for smart redirect
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
-      
-      // Don't store auth pages as previous page
+
       if (currentPath !== '/login' && currentPath !== '/register') {
         sessionStorage.setItem('previousPage', currentPath);
       }
     }
   }, []);
 
-  // Handle warehouse selection change
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   const handleWarehouseChange = (warehouseId: string) => {
     const warehouse = warehouses.find(w => w.id === warehouseId);
     if (warehouse) {
       setSelectedWarehouse(warehouse);
-      
-      // Store in localStorage for persistence
+
       localStorage.setItem('selectedWarehouse', warehouseId);
-      
-      // Show notification (you could add a toast here)
+
       console.log(`Warehouse changed to: ${warehouse.name}`);
     }
   };
 
-  // Load saved warehouse on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedWarehouseId = localStorage.getItem('selectedWarehouse');
@@ -302,13 +297,13 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      {/* Sticky Header */}
+      {}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4">
-          {/* Top Bar - Warehouse Info & Location Picker */}
+          {}
           <div className="hidden lg:flex items-center justify-between py-2 text-sm text-brand-charcoal border-b border-gray-100">
             <div className="flex items-center space-x-6">
-              {/* Location Picker */}
+              {}
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4 text-brand-yellow" />
                 <select 
@@ -322,7 +317,7 @@ export const Header: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <span className="text-xs text-gray-500">•</span>
+                <span className="text-xs text-gray-500">·</span>
                 <span className="text-xs text-brand-yellow font-medium">
                   {selectedWarehouse.estimatedDelivery}
                 </span>
@@ -344,7 +339,7 @@ export const Header: React.FC = () => {
                 <span>Nation Wide Delivery</span>
               </span>
               
-              {/* Payment Trust Icons */}
+              {}
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-gray-500">We Accept:</span>
                 <div className="flex items-center space-x-1">
@@ -356,9 +351,9 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Main Navigation */}
+          {}
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
+            {}
             <Link href="/" className="flex items-center space-x-2">
               <img 
                 src="/images/ASDLogo.png" 
@@ -367,23 +362,27 @@ export const Header: React.FC = () => {
               />
             </Link>
 
-            {/* Desktop Search - Enhanced */}
+            {}
             <div className="hidden lg:flex flex-1 max-w-3xl mx-8">
               <Suspense fallback={<div className="w-full h-12 bg-gray-100 rounded-lg animate-pulse"></div>}>
                 <SearchComponent />
               </Suspense>
             </div>
 
-            {/* Desktop Actions */}
+            {}
             <div className="hidden lg:flex items-center space-x-6">
-              {/* Mega Navigation */}
+              {}
               <HardwareNavigation />
               
-              {/* Auth & Cart Icons */}
+              {}
               <div className="flex items-center space-x-4">
-                {isAuthenticated ? (
+                {isLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 w-20 bg-gray-200 rounded"></div>
+                  </div>
+                ) : isAuthenticated ? (
                   <>
-                    {/* Profile Icon */}
+                    {}
                     <div className="relative group">
                       <Link href="/dashboard">
                         <Button 
@@ -396,7 +395,7 @@ export const Header: React.FC = () => {
                         </Button>
                       </Link>
                       
-                      {/* Profile Dropdown */}
+                      {}
                       <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                         <div className="p-4">
                           <div className="border-b border-gray-100 pb-3 mb-3">
@@ -435,15 +434,9 @@ export const Header: React.FC = () => {
                             <Link href="/orders" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                               Order History
                             </Link>
-                            <Link href="/profile" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
-                              Account Settings
-                            </Link>
-                            <Link href="/wishlist" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
-                              Wishlist
-                            </Link>
                             <div className="border-t border-gray-100 mt-2 pt-2">
                               <button 
-                                onClick={() => logout().catch(console.error)}
+                                onClick={handleLogout}
                                 className="block w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded"
                               >
                                 Sign Out
@@ -456,8 +449,8 @@ export const Header: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    {/* Sign In Button */}
-                    <Link href="/login">
+                    {}
+                    <Link href="/login" prefetch={true}>
                       <Button variant="ghost" size="sm" className="text-brand-charcoal hover:text-brand-yellow">
                         <User className="h-5 w-5 mr-2" />
                         Sign In
@@ -466,8 +459,8 @@ export const Header: React.FC = () => {
                   </>
                 )}
 
-                {/* Cart Icon */}
-                <Link href="/cart">
+                {}
+                <CartDropdown>
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -483,11 +476,11 @@ export const Header: React.FC = () => {
                       </Badge>
                     )}
                   </Button>
-                </Link>
+                </CartDropdown>
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
+            {}
             <Button
               variant="ghost"
               size="sm"
@@ -498,7 +491,7 @@ export const Header: React.FC = () => {
             </Button>
           </div>
 
-          {/* Mobile Menu */}
+          {}
           {isMobileMenuOpen && (
             <div className="lg:hidden border-t border-gray-200 py-4">
               <div className="space-y-3">
@@ -512,13 +505,14 @@ export const Header: React.FC = () => {
                       Categories
                     </Button>
                   </Link>
-                  {/* <Link href="/brands" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      Brands
-                    </Button>
-                  </Link> */}
+                  {}
                   
-                  {isAuthenticated ? (
+                  {isLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-10 w-full bg-gray-200 rounded mb-2"></div>
+                      <div className="h-10 w-full bg-gray-200 rounded"></div>
+                    </div>
+                  ) : isAuthenticated ? (
                     <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start text-brand-charcoal hover:text-brand-yellow hover:bg-brand-yellow/10">
                         <User className="h-4 w-4 mr-2" />
@@ -527,7 +521,7 @@ export const Header: React.FC = () => {
                     </Link>
                   ) : (
                     <>
-                      <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link href="/login" prefetch={true} onClick={() => setIsMobileMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start text-brand-charcoal hover:text-brand-yellow hover:bg-brand-yellow/10">
                           Sign In
                         </Button>

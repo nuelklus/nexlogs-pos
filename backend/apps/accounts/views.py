@@ -15,12 +15,12 @@ from .services import AuthService
 
 User = get_user_model()
 
-
 class RegisterView(APIView):
     """User registration endpoint"""
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
+        print(f"🔍 DEBUG: Received registration data: {request.data}")
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             try:
@@ -35,28 +35,39 @@ class RegisterView(APIView):
                     "message": "User registered successfully"
                 }, status=status.HTTP_201_CREATED)
             except ValueError as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+                # Handle both string and dict errors
+                if isinstance(e.args[0], dict):
+                    return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            print(f"❌ DEBUG: Serializer errors: {serializer.errors}")
+            # Return errors in consistent format
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
     """User login endpoint"""
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
+        print(f"LOGIN DEBUG: Received login request with data: {request.data}")
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
+            print(f"LOGIN DEBUG: Serializer validated successfully: {serializer.validated_data}")
             try:
                 user, tokens = AuthService.login_user(**serializer.validated_data)
+                print(f"LOGIN DEBUG: Login successful for user: {user.username}")
                 return Response({
                     "user": UserSerializer(user).data,
                     "tokens": tokens,
                     "message": "Login successful"
                 }, status=status.HTTP_200_OK)
             except ValueError as e:
+                print(f"LOGIN DEBUG: Login failed with ValueError: {str(e)}")
                 return Response({"error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            print(f"LOGIN DEBUG: Serializer validation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class TokenRefreshView(APIView):
     """Token refresh endpoint"""
@@ -72,7 +83,6 @@ class TokenRefreshView(APIView):
                 return Response({"error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LogoutView(APIView):
     """User logout endpoint"""
     permission_classes = [permissions.IsAuthenticated]
@@ -86,7 +96,6 @@ class LogoutView(APIView):
             except ValueError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ProfileView(APIView):
     """User profile endpoint"""
@@ -104,7 +113,6 @@ class ProfileView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # Legacy view for backward compatibility
 class MeView(ProfileView):

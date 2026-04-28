@@ -2,7 +2,6 @@ from django.contrib import admin
 
 from .models import JobSite
 
-
 @admin.register(JobSite)
 class JobSiteAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "city", "region", "contact_phone", "created_at")
