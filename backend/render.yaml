@@ -41,6 +41,11 @@ services:
     # staticPublishPath: staticfiles  # Disabled - let WhiteNoise handle
     # staticPublishGlob: "**/*"       # Disabled - let WhiteNoise handle
     
+    # Media files - Serve uploaded product images
+    staticPublishPath:
+      - staticfiles
+      - media
+    
     # Directories
     buildFilter:
       paths:
@@ -50,7 +55,6 @@ services:
         - manage.py
       ignoredPaths:
         - frontend/**
-        - media/**
         - HWBackendenv/**
         - __pycache__/**
         - .git/**
