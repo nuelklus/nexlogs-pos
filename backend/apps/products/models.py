@@ -107,6 +107,45 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def upload_image_to_supabase(self, image_file):
+        """
+        Upload image to Supabase and update image_url
+        
+        Args:
+            image_file: Django uploaded file
+            
+        Returns:
+            tuple: (success: bool, url: str, error: str)
+        """
+        from .supabase_storage import supabase_storage
+        
+        success, url, error = supabase_storage.upload_image(image_file)
+        
+        if success and url:
+            self.image_url = url
+            self.save(update_fields=['image_url'])
+            return True, url, None
+        else:
+            return False, None, error
+    
+    def get_supabase_url(self):
+        """
+        Get the Supabase URL for this product's image
+        
+        Returns:
+            str: Supabase URL or empty string
+        """
+        return self.image_url or ''
+    
+    def has_image(self):
+        """
+        Check if product has a valid image URL
+        
+        Returns:
+            bool: True if image_url exists and is not localhost
+        """
+        return bool(self.image_url and 'localhost' not in self.image_url)
+
     class Meta:
         ordering = ['-created_at']
         indexes = [

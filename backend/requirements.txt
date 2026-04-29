@@ -24,8 +24,12 @@ whitenoise==6.7.0
 # Email (optimized for production)
 resend==0.8.0
 
+# Image processing and Supabase storage
+Pillow==10.4.0
+supabase==2.29.0
+
 # Security and optimization (minimal for 512MB RAM)
-# Removed: django-debug-toolbar, django-extensions, pillow (if not needed for images)
+# Removed: django-debug-toolbar, django-extensions
 
 # Development tools (commented out for production)
 # django-debug-toolbar==4.2.0

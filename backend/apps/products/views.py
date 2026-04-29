@@ -337,12 +337,51 @@ class ProductCreateView(generics.CreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductCreateUpdateSerializer
     permission_classes = [IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def post(self, request, *args, **kwargs):
+        print(f"🔍 DEBUG: Incoming request")
+        print(f"   Content-Type: {request.content_type}")
+        print(f"   Method: {request.method}")
+        print(f"   User: {request.user.username} (staff: {request.user.is_staff})")
+        print(f"   FILES: {list(request.FILES.keys())}")
+        print(f"   POST data: {list(request.POST.keys())}")
+        
+        # Check if this is FormData
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            print("✅ Request is multipart/form-data")
+        else:
+            print(f"❌ Request is NOT multipart/form-data: {request.content_type}")
+        
+        # Debug POST data values
+        print("📋 POST data values:")
+        for key in request.POST:
+            value = request.POST.get(key)
+            print(f"   {key}: {value}")
+        
+        # Debug file info
+        if 'image' in request.FILES:
+            image_file = request.FILES['image']
+            print(f"📷 Image file info:")
+            print(f"   Name: {image_file.name}")
+            print(f"   Size: {image_file.size} bytes")
+            print(f"   Type: {image_file.content_type}")
+        
+        try:
+            response = super().post(request, *args, **kwargs)
+            print(f"✅ Response status: {response.status_code}")
+            return response
+        except Exception as e:
+            print(f"❌ Error in post method: {e}")
+            print(f"❌ Error type: {type(e)}")
+            raise
 
 class AdminProductUpdateView(generics.UpdateAPIView):
     """Update product by ID (admin only)"""
     queryset = Product.objects.all()
     serializer_class = ProductCreateUpdateSerializer
     permission_classes = [IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser]
     lookup_field = 'pk'  # Use primary key (ID)
     
     def update(self, request, *args, **kwargs):
@@ -369,6 +408,7 @@ class ProductUpdateView(generics.UpdateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductCreateUpdateSerializer
     permission_classes = [IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser]
     lookup_field = 'slug'
 
 class ProductDeleteView(generics.DestroyAPIView):

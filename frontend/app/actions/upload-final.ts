@@ -96,13 +96,53 @@ export async function uploadProductFinal(formData: FormData) {
     console.log('📦 Product payload:', requestData)
 
     console.log('🌐 Calling backend API...')
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/admin/create/`, {
+    
+    // Create FormData for backend
+    const backendFormData = new FormData()
+    backendFormData.append('name', requestData.name)
+    backendFormData.append('price', requestData.price.toString())
+    backendFormData.append('category', requestData.category.toString())
+    backendFormData.append('brand', requestData.brand.toString())
+    backendFormData.append('description', requestData.description)
+    backendFormData.append('short_description', requestData.short_description)
+    backendFormData.append('sku', requestData.sku)
+    backendFormData.append('slug', requestData.slug)
+    backendFormData.append('condition', requestData.condition)
+    backendFormData.append('weight', requestData.weight.toString())
+    backendFormData.append('dimensions', requestData.dimensions)
+    backendFormData.append('track_stock', requestData.track_stock.toString())
+    backendFormData.append('stock_quantity', requestData.stock_quantity.toString())
+    backendFormData.append('low_stock_threshold', requestData.low_stock_threshold.toString())
+    backendFormData.append('is_active', requestData.is_active.toString())
+    backendFormData.append('is_featured', requestData.is_featured.toString())
+    backendFormData.append('is_digital', requestData.is_digital.toString())
+    backendFormData.append('meta_title', requestData.meta_title)
+    backendFormData.append('meta_description', requestData.meta_description)
+    
+    // Re-attach the image file for backend processing
+    if (imageFile && imageFile.size > 0) {
+      backendFormData.append('image', imageFile)
+    }
+
+    console.log('🔍 FRONTEND DEBUG: Sending FormData to backend')
+    console.log('📁 FormData entries:')
+    for (let [key, value] of backendFormData.entries()) {
+      if (value instanceof File) {
+        console.log(`   ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`)
+      } else {
+        console.log(`   ${key}: ${value}`)
+      }
+    }
+    console.log('🔐 Authorization: Bearer [token]')
+    console.log('🌐 URL:', `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/create/`)
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/create/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        // Don't set Content-Type - let browser set it for FormData
       },
-      body: JSON.stringify(requestData),
+      body: backendFormData,
     })
 
     console.log('📡 API response status:', response.status)

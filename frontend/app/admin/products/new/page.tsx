@@ -40,6 +40,7 @@ function AddProductContent() {
   const [newSpec, setNewSpec] = useState({ key: '', value: '' });
   const [newImage, setNewImage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Categories state
@@ -209,79 +210,19 @@ function AddProductContent() {
       return;
     }
 
-    setIsUploading(true);
+    // Store the file locally - will be uploaded with product creation
+    setSelectedFile(file);
     
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const token = Cookies.get('access_token') || 
-                   (typeof window !== 'undefined' ? localStorage.getItem('access_token') || sessionStorage.getItem('access_token') : null);
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/upload-image/`, {
-        method: 'POST',
-        headers: {
-          
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: formData,
-        credentials: 'include', 
-      });
-
-      if (!response.ok) {
-        let errorMessage = 'Upload failed';
-        try {
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const error = await response.json();
-            errorMessage = error.error || error.message || errorMessage;
-          } else {
-            // If not JSON, get text response (likely HTML error page)
-            const textResponse = await response.text();
-            console.error('❌ Non-JSON error response:', textResponse.substring(0, 200));
-            errorMessage = 'Server error - please check configuration';
-          }
-        } catch (parseError) {
-          console.error('❌ Error parsing response:', parseError);
-          errorMessage = 'Server response could not be parsed';
-        }
-        throw new Error(errorMessage);
-      }
-
-      let result;
-      try {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          result = await response.json();
-        } else {
-          const textResponse = await response.text();
-          console.error('❌ Non-JSON success response:', textResponse.substring(0, 200));
-          throw new Error('Invalid server response format');
-        }
-      } catch (parseError) {
-        console.error('❌ Error parsing success response:', parseError);
-        throw new Error('Server response could not be parsed');
-      }
-
-      if (result.success && result.image_url) {
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, result.image_url]
-        }));
-      } else {
-        throw new Error(result.error || 'Upload failed');
-      }
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      alert(error.message || 'Failed to upload image');
-    } finally {
-      setIsUploading(false);
-    }
+    // Create a preview URL for display
+    const previewUrl = URL.createObjectURL(file);
+    setFormData(prev => ({
+      ...prev,
+      images: [previewUrl]
+    }));
+    
+    console.log('📁 File selected for Supabase upload:', file.name);
+    console.log('📏 File size:', (file.size / 1024).toFixed(1), 'KB');
+    console.log('🖼️ File type:', file.type);
   };
 
   const triggerFileUpload = () => {
@@ -328,14 +269,53 @@ function AddProductContent() {
         }))
       };
 
+      // Create FormData for backend
+      const backendFormData = new FormData()
+      backendFormData.append('name', productData.name)
+      backendFormData.append('slug', productData.slug)
+      backendFormData.append('description', productData.description)
+      backendFormData.append('short_description', productData.short_description)
+      backendFormData.append('price', productData.price.toString())
+      backendFormData.append('category', productData.category?.toString() || '1')
+      backendFormData.append('brand', productData.brand?.toString() || '1')
+      backendFormData.append('stock_quantity', productData.stock_quantity.toString())
+      backendFormData.append('low_stock_threshold', productData.low_stock_threshold.toString())
+      
+      // Only add image_url if we don't have a file (blob URLs are invalid)
+      if (!selectedFile && productData.image_url) {
+        backendFormData.append('image_url', productData.image_url)
+      }
+      
+      backendFormData.append('is_active', productData.is_active.toString())
+      backendFormData.append('is_featured', productData.is_featured.toString())
+      backendFormData.append('track_stock', productData.track_stock.toString())
+      backendFormData.append('condition', productData.condition)
+      backendFormData.append('weight', productData.weight?.toString() || '')
+      backendFormData.append('dimensions', productData.dimensions)
+      backendFormData.append('barcode', productData.barcode || '')
+      backendFormData.append('cost_price', productData.cost_price?.toString() || '')
+      backendFormData.append('is_digital', productData.is_digital.toString())
+      
+      // Add the image file for Supabase upload
+      if (selectedFile) {
+        backendFormData.append('image', selectedFile)
+        console.log('📁 Adding image file to FormData:', selectedFile.name)
+      }
+
+      console.log('🔍 ADMIN PAGE DEBUG: Sending FormData to backend')
+      console.log('📁 FormData entries:')
+      for (let [key, value] of backendFormData.entries()) {
+        console.log(`   ${key}: ${value}`)
+      }
+      console.log('🔐 Authorization: Bearer [token]')
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/create/`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          
+          // Don't set Content-Type - let browser set it for FormData
           ...(Cookies.get('access_token') && { 'Authorization': `Bearer ${Cookies.get('access_token')}` }),
         },
-        body: JSON.stringify(productData),
+        body: backendFormData,
         credentials: 'include',
       });
 
@@ -351,7 +331,8 @@ function AddProductContent() {
 
       alert(`Product created successfully!\nGenerated SKU: ${createdProduct.sku}`);
 
-      router.push('/admin/products');
+      // Use window.location for fresh page load to show new product immediately
+      window.location.href = '/admin/products';
       
     } catch (error: any) {
       console.error('Error creating product:', error);

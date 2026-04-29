@@ -128,6 +128,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
     specifications = TechnicalSpecificationSerializer(many=True, required=False)
+    image = serializers.ImageField(write_only=True, required=False, allow_null=True, use_url=False)
     
     class Meta:
         model = Product
@@ -135,7 +136,7 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             'name', 'slug', 'description', 'short_description',
             'sku', 'barcode', 'category', 'brand',
             'price', 'compare_price', 'cost_price',
-            'condition', 'weight', 'dimensions', 'image_url',
+            'condition', 'weight', 'dimensions', 'image_url', 'image',
             'track_stock', 'stock_quantity', 'low_stock_threshold',
             'is_active', 'is_featured', 'is_digital',
             'meta_title', 'meta_description',
@@ -145,13 +146,51 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             'sku': {'required': False, 'read_only': True}  # Make SKU optional and read-only
         }
 
+    def validate(self, attrs):
+        print(f"🔍 SERIALIZER VALIDATION")
+        print(f"📋 Attributes received: {list(attrs.keys())}")
+        
+        # Debug each attribute
+        for key, value in attrs.items():
+            print(f"   {key}: {value} ({type(value).__name__})")
+        
+        # Check required fields
+        required_fields = ['name', 'price', 'category', 'brand']
+        for field in required_fields:
+            if field not in attrs or not attrs[field]:
+                print(f"❌ Missing or empty required field: {field}")
+            else:
+                print(f"✅ {field}: {attrs[field]}")
+        
+        return super().validate(attrs)
+    
     def create(self, validated_data):
+        print(f"🔍 SERIALIZER CREATE METHOD")
+        print(f"✅ Validated data: {list(validated_data.keys())}")
+        
         specs_data = validated_data.pop('specifications', [])
+        image_file = validated_data.pop('image', None)
+        
+        print(f"📷 Image file: {image_file}")
+        if image_file:
+            print(f"   Name: {image_file.name}")
+            print(f"   Size: {image_file.size}")
         
         # Generate SKU if not provided
         if 'sku' not in validated_data or not validated_data['sku']:
             validated_data['sku'] = self.generate_sku(validated_data)
         
+        # Upload image to Supabase FIRST if provided
+        if image_file:
+            from apps.products.supabase_storage import supabase_storage
+            success, url, error = supabase_storage.upload_image(image_file)
+            if success and url:
+                validated_data['image_url'] = url
+                print(f"✅ Image uploaded to Supabase: {url}")
+            else:
+                print(f"⚠️ Image upload failed: {error}")
+        
+        # Create product with Supabase URL
         product = Product.objects.create(**validated_data)
         
         # Create specifications
@@ -210,10 +249,21 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         specs_data = validated_data.pop('specifications', [])
+        image_file = validated_data.pop('image', None)
         
         # Don't allow SKU to be changed during update
         if 'sku' in validated_data:
             validated_data.pop('sku')
+        
+        # Upload new image to Supabase if provided
+        if image_file:
+            from apps.products.supabase_storage import supabase_storage
+            success, url, error = supabase_storage.upload_image(image_file)
+            if success and url:
+                validated_data['image_url'] = url
+                print(f"✅ Image uploaded to Supabase: {url}")
+            else:
+                print(f"⚠️ Image upload failed: {error}")
         
         # Update product fields
         for attr, value in validated_data.items():

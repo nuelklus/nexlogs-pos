@@ -76,6 +76,10 @@ function ProductsManagementContent() {
 
   useEffect(() => {
     fetchProducts();
+  }, []); // Run on component mount
+
+  useEffect(() => {
+    fetchProducts();
   }, [searchTerm, categoryFilter, brandFilter, statusFilter, featuredFilter, currentPage]);
 
   const handleEdit = (product: Product) => {
