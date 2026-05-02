@@ -2,10 +2,11 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
     forceSwcTransforms: true,
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons']
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    serverComponentsExternalPackages: ['sharp']
   },
   reactStrictMode: true,
-  swcMinify: true,
+  swcMinify: false,
   compress: true,
   poweredByHeader: false,
   eslint: {
