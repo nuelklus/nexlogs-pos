@@ -1,5 +1,9 @@
-
 const nextConfig = {
+  experimental: {
+    optimizeCss: true,
+    forceSwcTransforms: true,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons']
+  },
   reactStrictMode: true,
   swcMinify: true,
   compress: true,
