@@ -1,9 +1,10 @@
 const nextConfig = {
   experimental: {
     optimizeCss: true,
-    forceSwcTransforms: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    serverComponentsExternalPackages: ['sharp']
+    serverComponentsExternalPackages: ['sharp'],
+    // Completely disable SWC
+    swcPlugins: [],
   },
   reactStrictMode: true,
   swcMinify: false,
