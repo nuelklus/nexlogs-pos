@@ -53,9 +53,9 @@ export async function uploadProductFinal(formData: FormData) {
         console.warn('⚠️ Supabase not configured, using placeholder image')
         console.error('❌ Supabase configuration error:', supabaseError)
         
-        // Use a placeholder image when Supabase is not configured
-        finalImageUrl = 'https://via.placeholder.com/300x200.png?text=Product+Image'
-        console.log('📷 Using placeholder image:', finalImageUrl)
+        // Use a local fallback image when Supabase is not configured
+        finalImageUrl = '/images/product-placeholder.png'
+        console.log('📷 Using local fallback image:', finalImageUrl)
       }
     }
 

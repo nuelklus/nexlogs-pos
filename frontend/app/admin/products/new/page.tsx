@@ -256,10 +256,10 @@ function AddProductContent() {
         is_featured: false,
         track_stock: true,
         condition: 'new',
-        weight: null,
+        weight: '',
         dimensions: 'Standard', 
-        barcode: null,
-        cost_price: null,
+        barcode: '',
+        cost_price: '',
         is_digital: false,
         
         specifications: Object.entries(formData.specifications).map(([key, value]) => ({
@@ -290,10 +290,10 @@ function AddProductContent() {
       backendFormData.append('is_featured', productData.is_featured.toString())
       backendFormData.append('track_stock', productData.track_stock.toString())
       backendFormData.append('condition', productData.condition)
-      backendFormData.append('weight', productData.weight?.toString() || '')
+      backendFormData.append('weight', productData.weight || '')
       backendFormData.append('dimensions', productData.dimensions)
       backendFormData.append('barcode', productData.barcode || '')
-      backendFormData.append('cost_price', productData.cost_price?.toString() || '')
+      backendFormData.append('cost_price', productData.cost_price || '')
       backendFormData.append('is_digital', productData.is_digital.toString())
       
       // Add the image file for Supabase upload

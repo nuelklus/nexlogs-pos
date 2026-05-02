@@ -137,11 +137,11 @@ function SearchComponent() {
                     >
                       <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden mr-3 flex-shrink-0">
                         <img
-                          src={product.image_url || 'https://via.placeholder.com/300x200'}
+                          src={product.image_url || '/images/product-placeholder.png'}
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200';
+                            (e.target as HTMLImageElement).src = '/images/product-placeholder.png';
                           }}
                         />
                       </div>
@@ -209,11 +209,11 @@ function SearchComponent() {
                     >
                       <div className="w-10 h-10 bg-gray-100 rounded overflow-hidden mr-3 flex-shrink-0">
                         <img
-                          src={product.image_url || 'https://via.placeholder.com/300x200'}
+                          src={product.image_url || '/images/product-placeholder.png'}
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200';
+                            (e.target as HTMLImageElement).src = '/images/product-placeholder.png';
                           }}
                         />
                       </div>

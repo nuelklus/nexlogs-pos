@@ -40,7 +40,7 @@ export async function uploadProductCompleteSimple(formData: FormData) {
       category,
       description,
       sku,
-      image_url: 'https:
+      image_url: '',
     }
 
     console.log('🔐 Getting auth token...')
@@ -57,7 +57,7 @@ export async function uploadProductCompleteSimple(formData: FormData) {
     }
 
     console.log('🌐 About to call backend API...')
-    console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https:
+    console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https://your-api-url.com'}/api/products/create/`)
     console.log('🎯 Product data to send:', {
       name: productData.name,
       price: productData.price,
@@ -66,7 +66,7 @@ export async function uploadProductCompleteSimple(formData: FormData) {
     })
 
     console.log('📡 Making fetch request...')
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https:
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://your-api-url.com'}/api/products/create/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

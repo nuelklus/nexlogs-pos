@@ -16,6 +16,7 @@ from .serializers import (
     ProductListSerializer, ProductDetailSerializer, ProductCreateUpdateSerializer,
     CategorySerializer, BrandSerializer, WarehouseSerializer, ProductReviewSerializer
 )
+from .caching import cache_product_list, cache_product_detail, invalidate_product_cache
 
 class ProductPagination(pagination.PageNumberPagination):
     """Custom pagination for products"""
@@ -370,6 +371,12 @@ class ProductCreateView(generics.CreateAPIView):
         try:
             response = super().post(request, *args, **kwargs)
             print(f"✅ Response status: {response.status_code}")
+            
+            # Clear all product-related caches when new product is created
+            if response.status_code == 201:
+                invalidate_product_cache()
+                print("🗑️ Cleared product caches after successful creation")
+            
             return response
         except Exception as e:
             print(f"❌ Error in post method: {e}")
@@ -386,9 +393,8 @@ class AdminProductUpdateView(generics.UpdateAPIView):
     
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)
-        # Clear cache for this product
-        from django.core.cache import cache
-        cache.delete(f'product_{kwargs["pk"]}')
+        # Clear all product-related caches when product is updated
+        invalidate_product_cache()
         return response
 
 class AdminProductDeleteView(generics.DestroyAPIView):
@@ -398,9 +404,8 @@ class AdminProductDeleteView(generics.DestroyAPIView):
     lookup_field = 'pk'  # Use primary key (ID)
     
     def destroy(self, request, *args, **kwargs):
-        # Clear cache for this product
-        from django.core.cache import cache
-        cache.delete(f'product_{kwargs["pk"]}')
+        # Clear all product-related caches when product is deleted
+        invalidate_product_cache()
         return super().destroy(request, *args, **kwargs)
 
 class ProductUpdateView(generics.UpdateAPIView):

@@ -171,7 +171,7 @@ export async function createProduct(productData: {
       return { success: false, error: 'Authentication required' }
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https:
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://your-api-url.com'
     console.log('🌐 Calling backend API:', `${apiUrl}/api/products/create/`)
 
     const response = await fetch(`${apiUrl}/api/products/create/`, {

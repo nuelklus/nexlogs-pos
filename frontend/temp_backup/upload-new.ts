@@ -40,7 +40,7 @@ export async function uploadProductNew(formData: FormData) {
       category,
       description,
       sku,
-      image_url: 'https:
+      image_url: '',
     }
 
     console.log('🔐 Getting auth token...')
@@ -57,7 +57,7 @@ export async function uploadProductNew(formData: FormData) {
     }
 
     console.log('🌐 About to call backend API...')
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https:
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://your-api-url.com'
     console.log('🔗 API URL:', `${apiUrl}/api/products/create/`)
     console.log('🎯 Product data to send:', {
       name: productData.name,

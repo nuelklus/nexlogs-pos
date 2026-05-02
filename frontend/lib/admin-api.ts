@@ -1,6 +1,7 @@
 
 import { apiClient } from './api';
 import Cookies from 'js-cookie';
+import { cachedFetch } from './cache';
 
 import { Product } from '@/types/product';
 import { Order as UnifiedOrder } from '@/types/order';
@@ -151,13 +152,26 @@ export const adminApi = {
     search?: string;
     category?: string;
     brand?: string;
+    condition?: string;
     is_active?: string;
     is_featured?: string;
   }): Promise<{count: number, num_pages: number, current_page: number, results: Product[]}> => {
-    return await adminApiClient.request('/products/', {
+    const token = Cookies.get('access_token') || 
+                 (typeof window !== 'undefined' ? localStorage.getItem('access_token') || sessionStorage.getItem('access_token') : null);
+    
+    const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/`;
+    const paramString = params ? new URLSearchParams(params as any).toString() : '';
+    const fullUrl = paramString ? `${url}?${paramString}` : url;
+    
+    const response = await cachedFetch(fullUrl, {
       method: 'GET',
-      params
-    }) as {count: number, num_pages: number, current_page: number, results: Product[]};
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        'Content-Type': 'application/json',
+      }
+    }, 180000); // Cache for 3 minutes
+    
+    return await response.json() as {count: number, num_pages: number, current_page: number, results: Product[]};
   },
 
   getProductDetail: async (productId: number): Promise<Product> => {
