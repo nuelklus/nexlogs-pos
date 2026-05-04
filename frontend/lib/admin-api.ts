@@ -159,7 +159,7 @@ export const adminApi = {
     const token = Cookies.get('access_token') || 
                  (typeof window !== 'undefined' ? localStorage.getItem('access_token') || sessionStorage.getItem('access_token') : null);
     
-    const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/`;
+    const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/`;
     const paramString = params ? new URLSearchParams(params as any).toString() : '';
     const fullUrl = paramString ? `${url}?${paramString}` : url;
     
