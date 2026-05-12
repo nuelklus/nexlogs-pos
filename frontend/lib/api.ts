@@ -15,7 +15,7 @@ import { DatabaseErrorHandler } from '../utils/databaseErrorHandler';
 
 export type { SearchFilters };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://your-production-backend.com/api';
 
 export interface User {
   id: number;
