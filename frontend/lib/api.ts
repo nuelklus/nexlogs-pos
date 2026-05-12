@@ -657,7 +657,7 @@ class ApiClient {
         setTimeout(() => reject(new Error('Categories request timeout')), 5000)
       );
       
-      const requestPromise = this.request<Category[]>('/products/categories/', { skipCache: true });
+      const requestPromise = this.request<Category[]>('products/categories/', { skipCache: true });
       
       const result = await Promise.race([requestPromise, timeoutPromise]) as Category[];
       console.log('🏷️ API Client - getCategories() result:', result);
@@ -667,7 +667,7 @@ class ApiClient {
       // Fallback to direct fetch
       console.log('🏷️ Using fallback fetch for categories...');
       try {
-        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/products/categories/`);
+        const response = await fetch(`${this.axiosInstance.defaults.baseURL.replace('/api/', '')}/api/products/categories/`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         console.log('🏷️ Fallback categories result:', data);
