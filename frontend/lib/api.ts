@@ -704,7 +704,7 @@ class ApiClient {
       // Fallback to direct fetch
       console.log('🏷️ Using fallback fetch for brands...');
       try {
-        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/products/brands/`);
+        const response = await fetch(`${this.axiosInstance.defaults.baseURL.replace('/api/', '')}/api/products/brands/`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         console.log('🏷️ Fallback brands result:', data);
