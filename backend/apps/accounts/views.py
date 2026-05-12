@@ -91,7 +91,8 @@ class LogoutView(APIView):
         serializer = LogoutSerializer(data=request.data)
         if serializer.is_valid():
             try:
-                AuthService.logout_user(**serializer.validated_data)
+                refresh_token = serializer.validated_data.get('refresh')
+                AuthService.logout_user(refresh_token=refresh_token)
                 return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
             except ValueError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -113,6 +114,32 @@ class ProfileView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TokenValidationView(APIView):
+    """Validate JWT token and return user info if valid"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """Validate token and return basic user info"""
+        print(f"🔍 DEBUG: Token validation request")
+        print(f"   User: {request.user}")
+        print(f"   Is authenticated: {request.user.is_authenticated if request.user else 'No user'}")
+        print(f"   Auth header: {request.META.get('HTTP_AUTHORIZATION', 'None')}")
+        
+        if request.user and request.user.is_authenticated:
+            print(f"✅ Token valid for user: {request.user.username}")
+            return Response({
+                'valid': True,
+                'user_id': request.user.id,
+                'username': request.user.username,
+                'role': request.user.role
+            }, status=status.HTTP_200_OK)
+        else:
+            print(f"❌ Token invalid or expired")
+            return Response({
+                'valid': False,
+                'error': 'Invalid or expired token'
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
 # Legacy view for backward compatibility
 class MeView(ProfileView):

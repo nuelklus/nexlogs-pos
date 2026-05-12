@@ -59,7 +59,8 @@ function AddProductContent() {
       setCategoriesLoading(true);
       setCategoriesError('');
       
-      const response = await fetch('http://localhost:8000/api/products/categories/');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/products/categories/`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
@@ -93,7 +94,8 @@ function AddProductContent() {
       setBrandsLoading(true);
       setBrandsError('');
       
-      const response = await fetch('http://localhost:8000/api/products/brands/');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/products/brands/`);
       if (!response.ok) {
         throw new Error('Failed to fetch brands');
       }
@@ -319,13 +321,33 @@ function AddProductContent() {
         credentials: 'include',
       });
 
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      console.log('Response content type:', contentType);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
-        const error = await response.json();
-        console.error('Backend error:', error);
-        throw new Error(error.error || error.detail || JSON.stringify(error) || 'Failed to create product');
+        let error;
+        if (contentType && contentType.includes('application/json')) {
+          error = await response.json();
+          console.error('Backend error (JSON):', error);
+          throw new Error(error.error || error.detail || JSON.stringify(error) || 'Failed to create product');
+        } else {
+          const errorText = await response.text();
+          console.error('Backend error (HTML/Text):', errorText);
+          throw new Error(`Backend error (${response.status}): ${errorText.substring(0, 200)}...`);
+        }
       }
 
-      const createdProduct = await response.json();
+      let createdProduct;
+      if (contentType && contentType.includes('application/json')) {
+        createdProduct = await response.json();
+      } else {
+        const responseText = await response.text();
+        console.error('Non-JSON response:', responseText);
+        throw new Error('Backend returned non-JSON response');
+      }
       console.log('Product created successfully:', createdProduct);
       console.log('Generated SKU:', createdProduct.sku);
 

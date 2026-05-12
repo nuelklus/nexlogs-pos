@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiClient, ProductDetail, SearchFilters, ProductsResponse, CategoryFallback } from '@/lib/api';
 import { Product } from '@/types/product';
 import { useCache } from './useCache';
+import { memoryCache } from './useCache';
 
 interface UseProductsOptions {
   immediate?: boolean;
@@ -60,6 +61,7 @@ export function useProducts(options: UseProductsOptions = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categoryFallback, setCategoryFallback] = useState<CategoryFallback | null>(null);
+  const [isChangingFilters, setIsChangingFilters] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -68,30 +70,87 @@ export function useProducts(options: UseProductsOptions = {}) {
     hasPrevious: false,
   });
   const [filters, setFilters] = useState<SearchFilters>(externalFilters);
+  const filtersRef = useRef(filters); // Add ref to always get current filters
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Update ref whenever filters change
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  // Sync filters when externalFilters change (this is the key fix!)
+  useEffect(() => {
+    console.log('🔄 Filter change detected:', externalFilters);
+    
+    // Clear products immediately and set loading to prevent flash
+    setProducts([]);  // Clear old products immediately!
+    setLoading(true);
+    setIsChangingFilters(true);  // Set flag to prevent cached data
+    
+    setFilters(externalFilters);
+    // Update filtersRef immediately to prevent race condition
+    filtersRef.current = externalFilters;
+    
+    console.log('⏸️ isChangingFilters set to TRUE - blocking old data');
+    
+    // Increase loading delay to ensure no flash
+    const minLoadingTimer = setTimeout(() => {
+      console.log('✅ isChangingFilters set to FALSE - allowing new data');
+      setIsChangingFilters(false);  // Clear flag after loading
+    }, 200);
+    
+    return () => clearTimeout(minLoadingTimer);
+  }, [externalFilters]);
 
   const memoizedTransformProduct = useMemo(() => transformProduct, []);
 
-  const cacheKey = useMemo(() => 
-    `products_${JSON.stringify(externalFilters)}_${JSON.stringify({ page: 1 })}`,
-    [externalFilters]
-  );
+  const [filterVersion, setFilterVersion] = useState(0);
+  
+  const cacheKey = useMemo(() => {
+    const key = `products_${JSON.stringify(filters)}_${JSON.stringify({ page: 1 })}_${filterVersion}`;
+    console.log('🔑 Cache key generated:', key);
+    return key;
+  }, [filters, filterVersion]);
 
+  // Create a fetcher that always uses current filters via ref
+  const fetcher = useCallback(() => {
+    const currentFilters = filtersRef.current; // Always get current filters
+    console.log('� ===== MAKING PRODUCTS API CALL =====');
+    console.log('� Making API call with filters:', currentFilters);
+    console.log('🌐 API URL will be: /api/products/public/ with filters:', currentFilters);
+    console.log('🔄 Cache key being used:', cacheKey);
+    console.log('🔍 filtersRef.current:', filtersRef.current);
+    console.log('🔍 filters state:', filters);
+    console.log('🔍 externalFilters:', externalFilters);
+    console.log('🚀 ===== END API CALL DETAILS =====');
+    // Force skip cache for products to ensure fresh data
+    return apiClient.getProducts({ ...currentFilters, page: 1, page_size: 12 }, { skipCache: true });
+  }, [cacheKey, filters]); // Add filters dependency to ensure fresh calls
+
+  // Disable cache to fix header dropdown issues
   const { data: cachedData, loading: cacheLoading, error: cacheError, invalidate } = useCache(
     cacheKey,
-    () => apiClient.getProducts({ ...externalFilters, page: 1, page_size: 12 }),
-    3 * 60 * 1000 
+    fetcher,
+    0 // Disable cache for products to ensure fresh data
   );
 
   useEffect(() => {
-    if (cachedData && !cacheLoading && !cacheError) {
+    if (cachedData && !cacheLoading && !cacheError && !isChangingFilters) {
       const products = cachedData.results || [];
       const count = cachedData.count || products.length;
       const nextPage = cachedData.next;
       const previousPage = cachedData.previous;
 
       const transformedProducts = products.map(memoizedTransformProduct) as Product[];
-      setProducts(transformedProducts);
+      
+      // CRITICAL: Only update products when NOT changing filters
+      // This completely prevents old data flash
+      if (!isChangingFilters) {
+        setProducts(transformedProducts);
+        console.log('✅ Products updated - no flash');
+      } else {
+        console.log('⏸️ Products update blocked - changing filters');
+      }
 
       setPagination({
         currentPage: 1,
@@ -107,8 +166,14 @@ export function useProducts(options: UseProductsOptions = {}) {
         setCategoryFallback(null);
       }
       
-      setLoading(false);
-      setError(null);
+      // Only complete loading when not changing filters
+      if (!isChangingFilters) {
+        setTimeout(() => {
+          setLoading(false);
+          setError(null);
+          console.log('⏳ Loading completed');
+        }, 150);
+      }
     } else if (cacheLoading) {
       setLoading(true);
       setError(null);
@@ -116,7 +181,7 @@ export function useProducts(options: UseProductsOptions = {}) {
       setLoading(false);
       setError(cacheError);
     }
-  }, [cachedData, cacheLoading, cacheError]);
+  }, [cachedData, cacheLoading, cacheError, isChangingFilters]);
 
   const fetchProducts = useCallback(async (newFilters?: SearchFilters, page: number = 1) => {
     setLoading(true);
@@ -193,9 +258,21 @@ export function useProducts(options: UseProductsOptions = {}) {
 
   useEffect(() => {
     if (immediate) {
+      console.log('🚀 Immediate fetch triggered');
       fetchProducts();
     }
-  }, [immediate, fetchProducts]);
+  }, [immediate, fetchProducts, filters, externalFilters]);
+
+  // Add effect to increment filter version when filters change
+  useEffect(() => {
+    if (JSON.stringify(filters) !== JSON.stringify(externalFilters)) {
+      console.log('🔄 Filters changed, incrementing version:', filters);
+      console.log('🗑️ Old externalFilters:', externalFilters);
+      console.log('🆕 New filters will become externalFilters:', filters);
+      setFilterVersion(prev => prev + 1);
+      // Don't fetch here - the main useEffect will handle it
+    }
+  }, [filters, externalFilters, fetchProducts]);
 
   return {
     products,
@@ -206,6 +283,17 @@ export function useProducts(options: UseProductsOptions = {}) {
     refetch: fetchProducts,
     loadPage,
     debouncedSearch,
+    invalidateCache: () => {
+      // Invalidate all product caches and increment version to force new cache key
+      console.log('🧹 Invalidating cache and incrementing filter version');
+      setFilterVersion(prev => prev + 1);
+      // Also clear any related cache keys
+      for (const [key] of memoryCache.keys()) {
+        if (key.startsWith('products_')) {
+          memoryCache.delete(key);
+        }
+      }
+    },
   };
 }
 
@@ -365,13 +453,22 @@ export function useCategories() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchCategories = async () => {
+    console.log('🏷️ useCategories - Starting fetch...');
     setLoading(true);
     setError(null);
     
     try {
-      const data = await apiClient.getCategories();
+      console.log('🏷️ useCategories - Using direct fetch for categories...');
+      // Use direct fetch to bypass axios hanging issue
+      const response = await fetch('http://localhost:8000/api/products/categories/');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log('🏷️ useCategories - Categories fetched:', data);
       setCategories(data);
     } catch (err) {
+      console.error('🏷️ useCategories - Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch categories');
     } finally {
       setLoading(false);

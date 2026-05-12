@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
 from apps.accounts.models import UserRole
@@ -103,6 +104,26 @@ class Product(models.Model):
     meta_title = models.CharField(max_length=200, blank=True)
     meta_description = models.CharField(max_length=300, blank=True)
     
+    # NEW: POS-specific fields for stock synchronization
+    pos_stock_quantity = models.IntegerField(default=0, help_text="Stock quantity from POS system")
+    last_pos_sync = models.DateTimeField(null=True, blank=True, help_text="Last time POS synced stock")
+    pos_store_id = models.CharField(max_length=50, default='main', help_text="POS store identifier")
+    stock_sync_version = models.IntegerField(default=0, help_text="Version number for stock sync conflicts")
+    
+    # NEW: Real-time stock tracking
+    stock_last_updated = models.DateTimeField(auto_now=True, help_text="Last time stock was updated")
+    stock_updated_by = models.CharField(max_length=100, null=True, blank=True, help_text="User who last updated stock")
+    stock_update_source = models.CharField(
+        max_length=20,
+        choices=[
+            ('ecommerce', 'E-commerce'),
+            ('pos', 'POS'),
+            ('admin', 'Admin'),
+        ],
+        default='admin',
+        help_text="Source of last stock update"
+    )
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -158,6 +179,11 @@ class Product(models.Model):
             models.Index(fields=['slug'], name='products_slug_idx'),
             models.Index(fields=['sku'], name='products_sku_idx'),
             models.Index(fields=['name'], name='products_name_idx'),
+            # NEW: POS-specific indexes for performance
+            models.Index(fields=['pos_stock_quantity', 'last_pos_sync'], name='products_pos_sync_idx'),
+            models.Index(fields=['pos_store_id', 'stock_sync_version'], name='products_pos_store_version_idx'),
+            models.Index(fields=['stock_update_source', 'stock_last_updated'], name='products_stock_source_time_idx'),
+            models.Index(fields=['barcode', 'is_active'], name='products_barcode_active_idx'),
         ]
 
     def __str__(self):
@@ -572,6 +598,66 @@ class ProContractorProfile(models.Model):
     
     def __str__(self):
         return f"{self.business_name} ({self.user.username})"
+
+
+class StockSyncLog(models.Model):
+    """Track stock synchronization between POS and e-commerce systems"""
+    
+    SYNC_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('conflict', 'Conflict'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stock_sync_logs')
+    old_quantity = models.IntegerField(help_text="Previous stock quantity")
+    new_quantity = models.IntegerField(help_text="New stock quantity")
+    change_amount = models.IntegerField(help_text="Quantity change (+ or -)")
+    
+    # Source and destination tracking
+    source = models.CharField(
+        max_length=20,
+        choices=[
+            ('ecommerce', 'E-commerce'),
+            ('pos', 'POS'),
+            ('admin', 'Admin'),
+        ],
+        help_text="Source of stock change"
+    )
+    store_id = models.CharField(max_length=50, default='main', help_text="Store/terminal identifier")
+    
+    # User and system tracking
+    operator = models.CharField(max_length=100, help_text="User who made the change")
+    device_id = models.CharField(max_length=100, null=True, blank=True, help_text="POS device identifier")
+    
+    # Status and timing
+    sync_status = models.CharField(
+        max_length=20,
+        choices=SYNC_STATUS_CHOICES,
+        default='pending',
+        help_text="Synchronization status"
+    )
+    timestamp = models.DateTimeField(auto_now_add=True, help_text="When the change occurred")
+    completed_at = models.DateTimeField(null=True, blank=True, help_text="When sync completed")
+    
+    # Conflict resolution
+    conflict_reason = models.TextField(null=True, blank=True, help_text="Reason for conflict if any")
+    resolved_by = models.CharField(max_length=100, null=True, blank=True, help_text="Who resolved the conflict")
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['product', 'timestamp'], name='stock_sync_product_time_idx'),
+            models.Index(fields=['source', 'timestamp'], name='stock_sync_source_time_idx'),
+            models.Index(fields=['store_id', 'timestamp'], name='stock_sync_store_time_idx'),
+            models.Index(fields=['sync_status', 'timestamp'], name='stock_sync_status_time_idx'),
+            models.Index(fields=['timestamp'], name='stock_sync_timestamp_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.product.name}: {self.old_quantity} → {self.new_quantity} ({self.source})"
     
     @property
     def is_verified(self):

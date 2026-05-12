@@ -11,6 +11,7 @@ import {
   SearchFilters,
   SearchResult 
 } from '../types/product';
+import { DatabaseErrorHandler } from '../utils/databaseErrorHandler';
 
 export type { SearchFilters };
 
@@ -177,35 +178,52 @@ class ApiClient {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
-        const originalRequest = error.config;
+        console.error('🔐 DEBUG: API request failed:', error.response?.status, error.response?.data);
         
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          console.log('🔄 DEBUG: 401 error detected, attempting token refresh...');
-          console.log('🔄 DEBUG: Original request URL:', originalRequest.url);
-          originalRequest._retry = true;
+        // Handle 401 Unauthorized
+        if (error.response?.status === 401) {
+          console.log('🔄 DEBUG: 401 detected, attempting token refresh...');
+          const tokens = this.getTokens();
           
-          try {
-            const tokens = this.getTokens();
-            console.log('🔄 DEBUG: Available tokens for refresh:', !!tokens?.refresh);
-            
-            if (tokens?.refresh) {
+          if (tokens?.refresh) {
+            try {
               const response = await this.refreshToken(tokens.refresh);
               this.setTokens(response, this.getUser()!);
-
               console.log('🔄 DEBUG: Retrying original request with new token...');
-              originalRequest.headers.Authorization = `Bearer ${response.access}`;
-              return this.axiosInstance(originalRequest);
-            } else {
-              console.log('🔄 DEBUG: No refresh token available');
+              error.config.headers.Authorization = `Bearer ${response.access}`;
+              return this.axiosInstance(error.config);
+            } catch (refreshError) {
+              console.error('🔄 DEBUG: Token refresh failed:', refreshError);
+              this.clearTokens();
+              if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+              }
             }
-          } catch (refreshError) {
-            console.error('🔄 DEBUG: Token refresh failed, logging out...');
-            
+          } else {
+            console.log('🔄 DEBUG: No refresh token, logging out...');
             this.clearTokens();
             if (typeof window !== 'undefined') {
               window.location.href = '/login';
             }
-            return Promise.reject(refreshError);
+          }
+        }
+        
+        // Auto-logout on any 401 or 403 (forbidden)
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Check if there's an active transaction before auto-logout
+          const hasActiveTransaction = this.checkActiveTransaction();
+          
+          if (hasActiveTransaction) {
+            console.log('🔄 Active transaction detected - deferring auto-logout due to 401/403');
+            // Store the error for later handling after transaction ends
+            this.storeAuthError(error);
+            return Promise.reject(error);
+          } else {
+            console.log('🔐 Authentication error - auto logout');
+            this.clearTokens();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
           }
         }
         
@@ -318,16 +336,13 @@ class ApiClient {
       const timeRemaining = payload.exp - currentTime;
       
       if (timeRemaining <= 0) {
-        console.log('🔄 TOKEN DEBUG: Token has expired');
+        console.log('� DEBUG: Token expired');
         return true;
-      } else if (timeRemaining <= 300) { // 5 minutes buffer
-        console.log('🔄 TOKEN DEBUG: Token expires soon, will refresh');
-        return true; // Force refresh if less than 5 minutes remaining
       }
       
       return false;
-    } catch (error) {
-      console.error('🔄 TOKEN DEBUG: Error parsing token:', error);
+    } catch {
+      console.log('� DEBUG: Invalid token format');
       return true;
     }
   }
@@ -338,7 +353,7 @@ class ApiClient {
       return;
     }
     
-    // Only check token expiration if it's close to expiring (within 5 minutes)
+    // Check token expiration and validity
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
@@ -369,16 +384,81 @@ class ApiClient {
     }
   }
 
+  async validateTokenWithServer(token: string): Promise<boolean> {
+    try {
+      const response = await this.request('/accounts/validate-token/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+      return response.valid === true;
+    } catch (error) {
+      console.log('🔐 DEBUG: Token validation failed:', error);
+      return false;
+    }
+  }
+
+  async checkTokenExpiryAndLogout(): Promise<void> {
+    const token = this.getAuthToken();
+    if (!token) {
+      return;
+    }
+    
+    // Skip validation if there's an active transaction
+    if (this.checkActiveTransaction()) {
+      console.log('🔄 Active transaction detected - skipping token expiry check');
+      return;
+    }
+  
+    // Validate token with server
+    const isValid = await this.validateTokenWithServer(token);
+    if (!isValid) {
+      console.log('🔐 Token expired during session - auto logout');
+      this.clearTokens();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+  }
+
+  private checkActiveTransaction(): boolean {
+    // Check if there's an active transaction flag in localStorage
+    const hasActiveTransaction = localStorage.getItem('hasActiveTransaction');
+    return hasActiveTransaction === 'true';
+  }
+
+  private storeAuthError(error: any): void {
+    // Store the auth error for later handling
+    localStorage.setItem('pendingAuthError', JSON.stringify({
+      status: error.response?.status,
+      message: error.response?.data?.error || error.message,
+      timestamp: Date.now()
+    }));
+  }
+
+  clearPendingAuthError(): void {
+    localStorage.removeItem('pendingAuthError');
+  }
+
+  getPendingAuthError(): any {
+    const error = localStorage.getItem('pendingAuthError');
+    return error ? JSON.parse(error) : null;
+  }
+
   async request<T>(
     endpoint: string,
-    options: AxiosRequestConfig = {}
+    options: AxiosRequestConfig & { skipCache?: boolean } = {}
   ): Promise<T> {
     const cacheKey = this.getCacheKey(endpoint, options.params);
     
-    if (options.method?.toUpperCase() === 'PATCH') {
-      console.log('Skipping cache for PATCH request:', endpoint);
+    // Create a unique deduplication key that includes params
+    const deduplicationKey = `${endpoint}_${JSON.stringify(options.params || {})}`;
+     
+    if (options.method?.toUpperCase() === 'PATCH' || options.skipCache) {
+      console.log('Skipping cache for request:', endpoint, options.skipCache ? '(skipCache)' : '(PATCH)');
     } else {
-      
+       
       const cachedData = this.getFromCache(cacheKey);
       if (cachedData) {
         console.log('Cache hit for:', endpoint);
@@ -386,23 +466,40 @@ class ApiClient {
       }
     }
 
-    const pendingRequest = pendingRequests.get(cacheKey);
+    // Request deduplication with unique key
+    const pendingRequest = pendingRequests.get(deduplicationKey);
     if (pendingRequest) {
-      console.log('Request deduplication for:', endpoint);
+      console.log('Request deduplication for:', deduplicationKey);
       return pendingRequest;
     }
 
-    console.log('API Request:', { endpoint, options });
+    const fullUrl = `${this.axiosInstance.defaults.baseURL}${endpoint}`;
+    const paramString = options.params ? `?${new URLSearchParams(options.params).toString()}` : '';
+    const absoluteUrl = `${fullUrl}${paramString}`;
+    
+    console.log('🚀 API Request Details:');
+    console.log('   Endpoint:', endpoint);
+    console.log('   Base URL:', this.axiosInstance.defaults.baseURL);
+    console.log('   Params:', options.params);
+    console.log('   Absolute URL:', absoluteUrl);
+    console.log('   Full URL being called:', fullUrl);
 
     const requestPromise = (async () => {
       try {
-        console.log('Making request to:', endpoint);
+        console.log('⏱️ Starting request at:', new Date().toISOString());
+        console.log('📡 Making request to absolute URL:', absoluteUrl);
         const response: AxiosResponse<T> = await this.axiosInstance.request({
           url: endpoint,
           ...options,
         });
 
-        console.log('Response status:', response.status);
+        console.log('✅ Response received at:', new Date().toISOString());
+        console.log('📊 Response status:', response.status);
+        console.log('📦 Response data type:', typeof response.data);
+        console.log('📦 Response data keys:', response.data ? Object.keys(response.data) : 'No data');
+        console.log('📦 Response data count:', response.data?.count || 'No count');
+        console.log('📦 Response results length:', response.data?.results?.length || 'No results');
+        console.log('📦 First 3 products:', response.data?.results?.slice(0, 3) || 'No products');
 
         if (response.status === 200 && (!options.method || options.method.toUpperCase() === 'GET')) {
           this.setCache(cacheKey, response.data);
@@ -434,18 +531,20 @@ class ApiClient {
           throw new Error(errorMessage);
         } else if (error.request) {
           
-          throw new Error('Network error - Unable to connect to the server. Please check your internet connection.');
+          const networkError = new Error('Network error - Unable to connect to the server. Please check your internet connection.');
+          return DatabaseErrorHandler.handleDatabaseError(networkError, () => this.request(endpoint, options));
         } else {
           
-          throw new Error(error.message || 'An unexpected error occurred');
+          const unexpectedError = new Error(error.message || 'An unexpected error occurred');
+          return DatabaseErrorHandler.handleDatabaseError(unexpectedError, () => this.request(endpoint, options));
         }
       } finally {
         
-        pendingRequests.delete(cacheKey);
+        pendingRequests.delete(deduplicationKey);
       }
     })();
 
-    pendingRequests.set(cacheKey, requestPromise);
+    pendingRequests.set(deduplicationKey, requestPromise);
 
     return requestPromise;
   }
@@ -492,7 +591,9 @@ class ApiClient {
     return { featured_products, categories, brands };
   }
 
-  async getProducts(filters: SearchFilters = {}): Promise<ProductsResponse> {
+  async getProducts(filters: SearchFilters = {}, options: { skipCache?: boolean } = {}): Promise<ProductsResponse> {
+    console.log('🏷️ API Client - getProducts() called - THIS GETS FILTERED PRODUCTS');
+    console.log('🏷️ Filters:', filters, 'skipCache:', options.skipCache);
     const params: any = {};
 
     if (filters.category) params.category = filters.category.toString();
@@ -509,12 +610,21 @@ class ApiClient {
     if (filters.page) params.page = filters.page.toString();
     if (filters.page_size) params.page_size = filters.page_size.toString();
 
+    // Add skip_cache parameter for debugging
+    params.skip_cache = 'true';
+
+    console.log('🔧 Final params being sent to backend:', params);
+
     const endpoint = '/products/public/';  
     
-    return this.request<ProductsResponse>(endpoint, {
+    const result = await this.request<ProductsResponse>(endpoint, {
       method: 'GET',
       params,
+      skipCache: options.skipCache,
     });
+    
+    console.log('🏷️ API Client - getProducts() result count:', result.count);
+    return result;
   }
 
   async getProductBySlug(slug: string): Promise<ProductDetail> {
@@ -540,7 +650,33 @@ class ApiClient {
   }
 
   async getCategories(): Promise<Category[]> {
-    return this.request<Category[]>('/products/categories/');
+    console.log('🏷️ API Client - getCategories() called - THIS GETS ALL CATEGORIES');
+    try {
+      // Add timeout and use direct fetch as fallback
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Categories request timeout')), 5000)
+      );
+      
+      const requestPromise = this.request<Category[]>('/products/categories/', { skipCache: true });
+      
+      const result = await Promise.race([requestPromise, timeoutPromise]) as Category[];
+      console.log('🏷️ API Client - getCategories() result:', result);
+      return result;
+    } catch (error) {
+      console.error('🏷️ API Client - getCategories() ERROR:', error);
+      // Fallback to direct fetch
+      console.log('🏷️ Using fallback fetch for categories...');
+      try {
+        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/products/categories/`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        console.log('🏷️ Fallback categories result:', data);
+        return data;
+      } catch (fallbackError) {
+        console.error('🏷️ Fallback also failed:', fallbackError);
+        throw error; // Throw original error
+      }
+    }
   }
 
   async getCategoryBySlug(slug: string): Promise<{
@@ -551,7 +687,33 @@ class ApiClient {
   }
 
   async getBrands(): Promise<Brand[]> {
-    return this.request<Brand[]>('/products/brands/');
+    console.log('🏷️ API Client - getBrands() called');
+    try {
+      // Add timeout and use direct fetch as fallback
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Brands request timeout')), 5000)
+      );
+      
+      const requestPromise = this.request<Brand[]>('/products/brands/', { skipCache: true });
+      
+      const result = await Promise.race([requestPromise, timeoutPromise]) as Brand[];
+      console.log('🏷️ API Client - getBrands() result:', result);
+      return result;
+    } catch (error) {
+      console.error('🏷️ API Client - getBrands() ERROR:', error);
+      // Fallback to direct fetch
+      console.log('🏷️ Using fallback fetch for brands...');
+      try {
+        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/products/brands/`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        console.log('🏷️ Fallback brands result:', data);
+        return data;
+      } catch (fallbackError) {
+        console.error('🏷️ Fallback also failed:', fallbackError);
+        throw error; // Throw original error
+      }
+    }
   }
 
   async getBrandBySlug(slug: string): Promise<{
@@ -658,6 +820,28 @@ class ApiClient {
     return !!tokens && !this.isTokenExpired(tokens.access);
   }
 
+  async getCurrentUserWithValidation(): Promise<User | null> {
+    const user = this.getUser();
+    if (!user) {
+      return null;
+    }
+
+    const token = this.getAuthToken();
+    if (!token) {
+      return null;
+    }
+
+    // Validate token with server
+    const isValid = await this.validateTokenWithServer(token);
+    if (!isValid) {
+      console.log('🔐 DEBUG: Token invalid, clearing user data');
+      this.clearTokens();
+      return null;
+    }
+
+    return user;
+  }
+
   getCurrentUser(): User | null {
     return this.getUser();
   }
@@ -682,4 +866,7 @@ export const {
   getProfile,
   isAuthenticated,
   getCurrentUser,
+  getCurrentUserWithValidation,
+  validateTokenWithServer,
+  checkTokenExpiryAndLogout,
 } = apiClient;

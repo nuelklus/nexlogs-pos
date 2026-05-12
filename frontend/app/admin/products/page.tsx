@@ -62,10 +62,22 @@ function ProductsManagementContent() {
       console.log('Fetching products with params:', params);
       const response = await adminApi.getProducts(params);
       console.log('API response:', response);
-      setProducts(response.results);
-      setTotalCount(response.count);
-      setTotalPages(response.num_pages);
-      setCurrentPage(response.current_page);
+      console.log('Response type:', typeof response);
+      console.log('Response.results:', response?.results);
+      console.log('Response.results type:', typeof response?.results);
+      
+      if (response && response.results && Array.isArray(response.results)) {
+        setProducts(response.results);
+        setTotalCount(response.count || 0);
+        setTotalPages(response.num_pages || 1);
+        setCurrentPage(response.current_page || 1);
+      } else {
+        console.error('Invalid API response structure:', response);
+        setProducts([]);
+        setTotalCount(0);
+        setTotalPages(1);
+        setCurrentPage(1);
+      }
     } catch (err: any) {
       console.error('Failed to fetch products:', err);
       setError(err.response?.data?.message || 'Failed to load products');
@@ -197,9 +209,9 @@ function ProductsManagementContent() {
         brand: updatedProduct.brand || { name: 'No Brand' }
       };
 
-      setProducts(products.map(product => 
+      setProducts(products && products.map(product => 
         product.id === selectedProduct.id ? normalizedProduct as any : product
-      ) as any);
+      ) as any) || [];
       
       setShowEditModal(false);
       setSelectedProduct(null);
@@ -243,9 +255,9 @@ function ProductsManagementContent() {
         brand: updatedProduct.brand || { name: 'No Brand' }
       };
       
-      setProducts(products.map(p => 
+      setProducts(products && products.map(p => 
         p.id === product.id ? normalizedProduct as any : p
-      ) as any);
+      ) as any) || [];
     } catch (err: any) {
       console.error('Failed to toggle product status:', err);
       setError(err.response?.data?.message || 'Failed to toggle product status');
@@ -264,9 +276,9 @@ function ProductsManagementContent() {
         brand: updatedProduct.brand || { name: 'No Brand' }
       };
       
-      setProducts(products.map(p => 
+      setProducts(products && products.map(p => 
         p.id === product.id ? normalizedProduct as any : p
-      ) as any);
+      ) as any) || [];
     } catch (err: any) {
       console.error('Failed to toggle featured status:', err);
       setError(err.response?.data?.message || 'Failed to toggle featured status');
@@ -391,7 +403,7 @@ function ProductsManagementContent() {
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-          ) : products.length === 0 ? (
+          ) : (!products || products.length === 0) ? (
             <div className="text-center py-12">
               <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
@@ -426,7 +438,7 @@ function ProductsManagementContent() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map((product) => (
+                  {products && products.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">

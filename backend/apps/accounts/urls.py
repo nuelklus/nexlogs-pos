@@ -7,6 +7,7 @@ from .views import (
     TokenRefreshView,
     ProfileView,
     MeView,
+    TokenValidationView,
 )
 
 urlpatterns = [
@@ -16,4 +17,5 @@ urlpatterns = [
     path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("profile/", ProfileView.as_view(), name="profile"),
     path("me/", MeView.as_view(), name="me"),  # Legacy endpoint
+    path("validate-token/", TokenValidationView.as_view(), name="validate_token"),
 ]

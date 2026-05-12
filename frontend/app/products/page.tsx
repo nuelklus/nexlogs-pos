@@ -46,9 +46,44 @@ function ProductsPageContent() {
     return initialFilters;
   });
 
-  const { products, loading, error, refetch } = useProducts({ immediate: true, filters });
+  const hookResult = useProducts({ immediate: true, filters });
+const { products, loading, error, refetch, invalidateCache, pagination, loadPage } = hookResult;
+
+console.log('🔍 Hook result:', hookResult);
+console.log('🔍 loadPage function:', loadPage);
   const { categories } = useCategories();
   const { brands } = useBrands();
+
+  // Listen to URL parameter changes and update filters
+  useEffect(() => {
+    const category = searchParams.get('category');
+    const brand = searchParams.get('brand');
+    const search = searchParams.get('search');
+    const minPrice = searchParams.get('min_price');
+    const maxPrice = searchParams.get('max_price');
+    const inStock = searchParams.get('in_stock');
+    
+    const newFilters: SearchFilters = {};
+    if (category) newFilters.category = category;
+    if (brand) newFilters.brand = brand;
+    if (search) newFilters.search = search;
+    if (minPrice) newFilters.min_price = parseFloat(minPrice);
+    if (maxPrice) newFilters.max_price = parseFloat(maxPrice);
+    if (inStock) newFilters.in_stock = inStock === 'true';
+    
+    console.log('🔄 URL params changed, updating filters:', newFilters);
+    console.log('🗑️ Previous filters:', filters);
+    console.log('🆕 New filters:', newFilters);
+    setFilters(newFilters);
+    invalidateCache(); // Always invalidate cache when URL changes
+    console.log('🧹 Cache invalidated');
+    
+    // Force refetch after URL change (this fixes header dropdown issue)
+    setTimeout(() => {
+      console.log('🔄 Force refetch after URL change');
+      refetch();
+    }, 100);
+  }, [searchParams]); // Only depend on searchParams
 
   const updateFilters = useCallback((newFilters: SearchFilters) => {
     const params = new URLSearchParams();
@@ -271,6 +306,33 @@ function ProductsPageContent() {
                 {hasActiveFilters && (
                   <Button onClick={clearFilters}>Clear Filters</Button>
                 )}
+              </div>
+            )}
+            
+            {/* Pagination Controls */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex justify-center mt-8 space-x-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadPage(pagination.currentPage - 1)}
+                  disabled={pagination.currentPage <= 1}
+                >
+                  Previous
+                </Button>
+                
+                <span className="px-4 py-2 text-sm text-gray-600">
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </span>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadPage(pagination.currentPage + 1)}
+                  disabled={pagination.currentPage >= pagination.totalPages}
+                >
+                  Next
+                </Button>
               </div>
             )}
           </div>

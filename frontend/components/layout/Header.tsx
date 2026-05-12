@@ -248,7 +248,7 @@ export const Header: React.FC = () => {
   const { itemCount: cartItemCount } = useCart();
   const [isClient, setIsClient] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const { user, isAuthenticated, logout, isLoading, isTokenValid } = useAuth();
   const { selectedWarehouse, setSelectedWarehouse, warehouses } = useLocation();
   const router = useRouter();
 
@@ -411,7 +411,7 @@ export const Header: React.FC = () => {
                             <Link href="/dashboard" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                               Dashboard
                             </Link>
-                            {user?.role === 'ADMIN' && (
+                            {user?.role === 'ADMIN' && isTokenValid && (
                               <>
                                 <Link href="/admin/products" className="block px-3 py-2 text-sm text-brand-charcoal hover:bg-gray-50 rounded">
                                   <Package className="inline h-3 w-3 mr-1" />

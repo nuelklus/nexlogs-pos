@@ -6,7 +6,7 @@ interface CacheEntry<T> {
   ttl: number;
 }
 
-const memoryCache = new Map<string, CacheEntry<any>>();
+export const memoryCache = new Map<string, CacheEntry<any>>();
 
 export function useCache<T>(
   key: string,

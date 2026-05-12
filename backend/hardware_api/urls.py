@@ -103,6 +103,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", health),  # Keep for backward compatibility
     path("api/", include("apps.api_urls")),
+    path("api/pos/", include("apps.pos.urls")),  # Add POS endpoints
 ]
 
 # Serve media and static files (both development and production)

@@ -182,13 +182,18 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
         
         # Upload image to Supabase FIRST if provided
         if image_file:
-            from apps.products.supabase_storage import supabase_storage
-            success, url, error = supabase_storage.upload_image(image_file)
-            if success and url:
-                validated_data['image_url'] = url
-                print(f"✅ Image uploaded to Supabase: {url}")
-            else:
-                print(f"⚠️ Image upload failed: {error}")
+            try:
+                from apps.products.supabase_storage import supabase_storage
+                success, url, error = supabase_storage.upload_image(image_file)
+                if success and url:
+                    validated_data['image_url'] = url
+                    print(f"✅ Image uploaded to Supabase: {url}")
+                else:
+                    print(f"⚠️ Image upload failed: {error}")
+            except Exception as e:
+                print(f"❌ Supabase upload error: {e}")
+                print(f"⚠️ Continuing without image upload")
+                # Continue without image - product will still be created
         
         # Create product with Supabase URL
         product = Product.objects.create(**validated_data)

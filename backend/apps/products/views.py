@@ -40,16 +40,22 @@ class PublicProductListView(generics.ListAPIView):
         self._category_fallback = False
         self._requested_category = None
         
+        # Check if we should skip cache for debugging
+        skip_cache = self.request.query_params.get('skip_cache') == 'true'
+        
         # Create cache key based on query parameters
         cache_key = f"products_public_{str(sorted(self.request.query_params.items()))}"
         
-        # Try to get from cache first
-        cached_queryset = cache.get(cache_key)
-        if cached_queryset:
-            print(f"Public API - Cache HIT for key: {cache_key}")
-            return cached_queryset
-        
-        print(f"Public API - Cache MISS for key: {cache_key}")
+        if skip_cache:
+            print(f"Public API - Skipping cache for debugging")
+            
+            # Try to get from cache first
+            cached_queryset = cache.get(cache_key)
+            if cached_queryset:
+                print(f"Public API - Cache HIT for key: {cache_key}")
+                return cached_queryset
+            
+            print(f"Public API - Cache MISS for key: {cache_key}")
         
         queryset = super().get_queryset()  # Already filtered to active products only
         
@@ -354,34 +360,25 @@ class ProductCreateView(generics.CreateAPIView):
         else:
             print(f"❌ Request is NOT multipart/form-data: {request.content_type}")
         
-        # Debug POST data values
-        print("📋 POST data values:")
-        for key in request.POST:
-            value = request.POST.get(key)
-            print(f"   {key}: {value}")
-        
-        # Debug file info
-        if 'image' in request.FILES:
-            image_file = request.FILES['image']
-            print(f"📷 Image file info:")
-            print(f"   Name: {image_file.name}")
-            print(f"   Size: {image_file.size} bytes")
-            print(f"   Type: {image_file.content_type}")
-        
         try:
-            response = super().post(request, *args, **kwargs)
-            print(f"✅ Response status: {response.status_code}")
-            
-            # Clear all product-related caches when new product is created
-            if response.status_code == 201:
-                invalidate_product_cache()
-                print("🗑️ Cleared product caches after successful creation")
-            
-            return response
+            return super().post(request, *args, **kwargs)
+        except AttributeError as e:
+            print(f"❌ AttributeError caught: {e}")
+            print(f"   Type: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": f"AttributeError: {str(e)}"}, 
+                status=500
+            )
         except Exception as e:
-            print(f"❌ Error in post method: {e}")
-            print(f"❌ Error type: {type(e)}")
-            raise
+            print(f"❌ General Exception caught: {e}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": f"Server error: {str(e)}"}, 
+                status=500
+            )
 
 class AdminProductUpdateView(generics.UpdateAPIView):
     """Update product by ID (admin only)"""

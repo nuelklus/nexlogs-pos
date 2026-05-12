@@ -485,9 +485,9 @@ export function AdminDashboard() {
       };
 
       setProducts((prevProducts: Product[]) => 
-        prevProducts.map(product => 
+        prevProducts ? prevProducts.map(product => 
           product.id === selectedProduct.id ? normalizedProduct as any : product
-        )
+        ) : []
       );
       
       setShowEditModal(false);
@@ -508,7 +508,7 @@ export function AdminDashboard() {
       setUpdatingProduct(true);
       await adminApi.deleteProduct(parseInt(selectedProduct.id));
 
-      setProducts(products.filter(product => product.id !== selectedProduct.id));
+      setProducts(products ? products.filter(product => product.id !== selectedProduct.id) : []);
       
       setShowDeleteModal(false);
       setSelectedProduct(null);
@@ -855,7 +855,7 @@ export function AdminDashboard() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
-        ) : products.length === 0 ? (
+        ) : !products || products.length === 0 ? (
           <div className="text-center py-12">
             <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
@@ -890,7 +890,7 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
+                {products && products.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

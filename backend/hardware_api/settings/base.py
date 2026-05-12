@@ -31,12 +31,15 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
+    # "channels",
+    # "channels_redis",
     "apps.accounts",
     "apps.shipping",
     "apps.products",
     "apps.orders",
     "apps.core",  # Add core app for health checks
     "apps.admin_dashboard",  # Add admin dashboard app
+    "apps.pos",  # Add POS app for stock synchronization
     "whitenoise",  # Add WhiteNoise for static files
 ]
 
@@ -45,6 +48,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",  # Right after SecurityMiddleware
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "apps.core.middleware.DatabaseRetryMiddleware",  # Add database retry middleware
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -84,11 +88,13 @@ DATABASES = {
         "USER": os.getenv("SUPABASE_DB_USER"),
         "PASSWORD": os.getenv("SUPABASE_DB_PASSWORD"),
         "HOST": os.getenv("SUPABASE_DB_HOST"),
-        "PORT": os.getenv("SUPABASE_DB_PORT", "5432"),
+        "PORT": os.getenv("SUPABASE_DB_PORT", "6543"),
         "OPTIONS": {
             "sslmode": "require",
-            "connect_timeout": 10,
+            "connect_timeout": 60,
         },
+        "CONN_MAX_AGE": 300,  # 5 minutes
+        "ATOMIC_REQUESTS": True,
     }
 }
 
@@ -145,7 +151,7 @@ SIMPLE_JWT = {
 # CORS Configuration - Comprehensive setup
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in os.getenv("DJANGO_CORS_ALLOWED_ORIGINS", 
-        "http://localhost:3000,http://127.0.0.1:3000"
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,https://dev.nexlogssolutions.com"
     ).split(",") if o.strip()
 ]
 
@@ -211,6 +217,9 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'x-pos-device-id',
+    'x-pos-store-id',
+    'x-pos-token',
 ]
 
 # Allow specific methods
@@ -269,3 +278,14 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 UPLOAD_FILE_MAX_SIZE = 5242880  # 5MB
+
+# Channels configuration (temporarily disabled)
+# ASGI_APPLICATION = "hardware_api.asgi.application"
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [{"host": "127.0.0.1", "port": 6379}],
+#         },
+#     },
+# }
