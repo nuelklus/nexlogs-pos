@@ -460,7 +460,7 @@ export function useCategories() {
     try {
       console.log('🏷️ useCategories - Using direct fetch for categories...');
       // Use direct fetch to bypass axios hanging issue
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/categories/`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/categories/`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }

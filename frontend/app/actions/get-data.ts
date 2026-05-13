@@ -7,7 +7,7 @@ export async function getCategories() {
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
     console.log('token - token', token)
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/categories/`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/categories/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ export async function getBrands() {
     const cookieStore = cookies()
     const token = cookieStore.get('access_token')?.value
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/brands/`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/brands/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

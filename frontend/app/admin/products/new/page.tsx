@@ -60,7 +60,7 @@ function AddProductContent() {
       setCategoriesError('');
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/products/categories/`);
+      const response = await fetch(`${apiUrl}/api/products/categories/`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }

@@ -15,7 +15,7 @@ import { DatabaseErrorHandler } from '../utils/databaseErrorHandler';
 
 export type { SearchFilters };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://your-production-backend.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://your-production-backend.com';
 
 export interface User {
   id: number;
@@ -657,7 +657,7 @@ class ApiClient {
         setTimeout(() => reject(new Error('Categories request timeout')), 5000)
       );
       
-      const requestPromise = this.request<Category[]>('products/categories/', { skipCache: true });
+      const requestPromise = this.request<Category[]>('/api/products/categories/', { skipCache: true });
       
       const result = await Promise.race([requestPromise, timeoutPromise]) as Category[];
       console.log('🏷️ API Client - getCategories() result:', result);
@@ -667,7 +667,7 @@ class ApiClient {
       // Fallback to direct fetch
       console.log('🏷️ Using fallback fetch for categories...');
       try {
-        const response = await fetch(`${this.axiosInstance.defaults.baseURL.replace('/api/', '')}/api/products/categories/`);
+        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/api/products/categories/`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         console.log('🏷️ Fallback categories result:', data);
@@ -694,7 +694,7 @@ class ApiClient {
         setTimeout(() => reject(new Error('Brands request timeout')), 5000)
       );
       
-      const requestPromise = this.request<Brand[]>('/products/brands/', { skipCache: true });
+      const requestPromise = this.request<Brand[]>('/api/products/brands/', { skipCache: true });
       
       const result = await Promise.race([requestPromise, timeoutPromise]) as Brand[];
       console.log('🏷️ API Client - getBrands() result:', result);
@@ -704,7 +704,7 @@ class ApiClient {
       // Fallback to direct fetch
       console.log('🏷️ Using fallback fetch for brands...');
       try {
-        const response = await fetch(`${this.axiosInstance.defaults.baseURL.replace('/api/', '')}/api/products/brands/`);
+        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/api/products/brands/`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         console.log('🏷️ Fallback brands result:', data);
