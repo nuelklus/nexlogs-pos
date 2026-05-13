@@ -297,17 +297,10 @@ function AddProductContent() {
       // Add the image file for Supabase upload
       if (selectedFile) {
         backendFormData.append('image', selectedFile)
-        console.log('📁 Adding image file to FormData:', selectedFile.name)
       }
 
-      console.log('🔍 ADMIN PAGE DEBUG: Sending FormData to backend')
-      console.log('📁 FormData entries:')
-      for (let [key, value] of backendFormData.entries()) {
-        console.log(`   ${key}: ${value}`)
-      }
-      console.log('🔐 Authorization: Bearer [token]')
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/create/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/products/create/`, {
         method: 'POST',
         headers: {
           // Don't set Content-Type - let browser set it for FormData
@@ -319,9 +312,7 @@ function AddProductContent() {
 
       // Check if response is JSON before parsing
       const contentType = response.headers.get('content-type');
-      console.log('Response content type:', contentType);
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
+      
 
       if (!response.ok) {
         let error;
