@@ -17,8 +17,7 @@ export class DatabaseErrorHandler {
 
     if (isDatabaseError && this.retryAttempts < this.maxRetries && retryCallback) {
       this.retryAttempts++;
-      console.log(`Database error, retrying... Attempt ${this.retryAttempts}/${this.maxRetries}`);
-      
+        
       // Exponential backoff
       const delay = this.retryDelay * Math.pow(2, this.retryAttempts - 1);
       await new Promise(resolve => setTimeout(resolve, delay));

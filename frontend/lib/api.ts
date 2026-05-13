@@ -153,8 +153,12 @@ export interface ProductsResponse {
 class ApiClient {
   private axiosInstance: AxiosInstance;
   private debouncedRequests: Map<string, NodeJS.Timeout> = new Map();
+  private hasApiPrefix: boolean;
 
   constructor() {
+    // Check if base URL already has /api
+    this.hasApiPrefix = API_BASE_URL.includes('/api');
+    
     this.axiosInstance = axios.create({
       baseURL: API_BASE_URL,
       timeout: 30000, 
@@ -165,9 +169,6 @@ class ApiClient {
 
     this.axiosInstance.interceptors.request.use((config) => {
       const token = this.getAuthToken();
-      console.log('🔍 DEBUG: API Request to:', config.url);
-      console.log('🔍 DEBUG: Token available:', !!token);
-      console.log('🔍 DEBUG: Token preview:', token ? `${token.substring(0, 20)}...` : 'none');
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -175,25 +176,45 @@ class ApiClient {
       return config;
     });
 
+    this.axiosInstance.interceptors.request.use((config) => {
+      const token = this.getAuthToken();
+      console.log('🔍 DEBUG: API Request to:', config.url);
+      console.log('🔍 DEBUG: Token available:', !!token);
+      
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+
+  // Helper method to handle dynamic API paths
+  private getPath(path: string): string {
+    // If base URL already has /api, remove /api from the path
+    if (this.hasApiPrefix && path.startsWith('/api/')) {
+      return path.replace('/api/', '/');
+    }
+    // If base URL doesn't have /api and path doesn't start with /api, add it
+    if (!this.hasApiPrefix && !path.startsWith('/api/')) {
+      return `/api${path}`;
+    }
+    return path;
+  }
+
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
-        console.error('🔐 DEBUG: API request failed:', error.response?.status, error.response?.data);
         
         // Handle 401 Unauthorized
         if (error.response?.status === 401) {
-          console.log('🔄 DEBUG: 401 detected, attempting token refresh...');
           const tokens = this.getTokens();
           
           if (tokens?.refresh) {
             try {
               const response = await this.refreshToken(tokens.refresh);
               this.setTokens(response, this.getUser()!);
-              console.log('🔄 DEBUG: Retrying original request with new token...');
               error.config.headers.Authorization = `Bearer ${response.access}`;
               return this.axiosInstance(error.config);
             } catch (refreshError) {
-              console.error('🔄 DEBUG: Token refresh failed:', refreshError);
               this.clearTokens();
               if (typeof window !== 'undefined') {
                 window.location.href = '/login';
@@ -461,7 +482,6 @@ class ApiClient {
        
       const cachedData = this.getFromCache(cacheKey);
       if (cachedData) {
-        console.log('Cache hit for:', endpoint);
         return cachedData;
       }
     }
@@ -469,7 +489,6 @@ class ApiClient {
     // Request deduplication with unique key
     const pendingRequest = pendingRequests.get(deduplicationKey);
     if (pendingRequest) {
-      console.log('Request deduplication for:', deduplicationKey);
       return pendingRequest;
     }
 
@@ -477,30 +496,15 @@ class ApiClient {
     const paramString = options.params ? `?${new URLSearchParams(options.params).toString()}` : '';
     const absoluteUrl = `${fullUrl}${paramString}`;
     
-    console.log('🚀 API Request Details:');
-    console.log('   Endpoint:', endpoint);
-    console.log('   Base URL:', this.axiosInstance.defaults.baseURL);
-    console.log('   Params:', options.params);
-    console.log('   Absolute URL:', absoluteUrl);
-    console.log('   Full URL being called:', fullUrl);
 
     const requestPromise = (async () => {
       try {
-        console.log('⏱️ Starting request at:', new Date().toISOString());
-        console.log('📡 Making request to absolute URL:', absoluteUrl);
         const response: AxiosResponse<T> = await this.axiosInstance.request({
           url: endpoint,
           ...options,
         });
 
-        console.log('✅ Response received at:', new Date().toISOString());
-        console.log('📊 Response status:', response.status);
-        console.log('📦 Response data type:', typeof response.data);
-        console.log('📦 Response data keys:', response.data ? Object.keys(response.data) : 'No data');
-        console.log('📦 Response data count:', response.data?.count || 'No count');
-        console.log('📦 Response results length:', response.data?.results?.length || 'No results');
-        console.log('📦 First 3 products:', response.data?.results?.slice(0, 3) || 'No products');
-
+       
         if (response.status === 200 && (!options.method || options.method.toUpperCase() === 'GET')) {
           this.setCache(cacheKey, response.data);
         }
@@ -650,27 +654,21 @@ class ApiClient {
   }
 
   async getCategories(): Promise<Category[]> {
-    console.log('🏷️ API Client - getCategories() called - THIS GETS ALL CATEGORIES');
     try {
       // Add timeout and use direct fetch as fallback
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Categories request timeout')), 5000)
       );
       
-      const requestPromise = this.request<Category[]>('/api/products/categories/', { skipCache: true });
+      const requestPromise = this.request<Category[]>('/products/categories/', { skipCache: true });
       
       const result = await Promise.race([requestPromise, timeoutPromise]) as Category[];
-      console.log('🏷️ API Client - getCategories() result:', result);
       return result;
     } catch (error) {
-      console.error('🏷️ API Client - getCategories() ERROR:', error);
-      // Fallback to direct fetch
-      console.log('🏷️ Using fallback fetch for categories...');
       try {
-        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/api/products/categories/`);
+        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/products/categories/`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        console.log('🏷️ Fallback categories result:', data);
         return data;
       } catch (fallbackError) {
         console.error('🏷️ Fallback also failed:', fallbackError);
@@ -687,27 +685,21 @@ class ApiClient {
   }
 
   async getBrands(): Promise<Brand[]> {
-    console.log('🏷️ API Client - getBrands() called');
     try {
       // Add timeout and use direct fetch as fallback
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Brands request timeout')), 5000)
       );
       
-      const requestPromise = this.request<Brand[]>('/api/products/brands/', { skipCache: true });
+      const requestPromise = this.request<Brand[]>('/products/brands/', { skipCache: true });
       
       const result = await Promise.race([requestPromise, timeoutPromise]) as Brand[];
-      console.log('🏷️ API Client - getBrands() result:', result);
       return result;
     } catch (error) {
-      console.error('🏷️ API Client - getBrands() ERROR:', error);
-      // Fallback to direct fetch
-      console.log('🏷️ Using fallback fetch for brands...');
       try {
-        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/api/products/brands/`);
+        const response = await fetch(`${this.axiosInstance.defaults.baseURL}/products/brands/`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        console.log('🏷️ Fallback brands result:', data);
         return data;
       } catch (fallbackError) {
         console.error('🏷️ Fallback also failed:', fallbackError);

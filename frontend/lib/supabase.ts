@@ -5,9 +5,6 @@ const supabaseUrl = 'https://your-project.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-key'
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_ANON_KEY not found in environment variables')
-  console.warn('📝 Please create a .env.local file with your Supabase credentials')
-  console.warn('📝 See SETUP_GUIDE.md for instructions')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
@@ -35,7 +32,6 @@ export async function uploadProductImage(file: File): Promise<string> {
   const fileName = `${Math.random()}.${fileExt}`
   const filePath = `product-images/${fileName}`
 
-  console.log('Uploading image to:', filePath)
 
   const { data, error } = await supabase.storage
     .from('product-images')
@@ -45,17 +41,14 @@ export async function uploadProductImage(file: File): Promise<string> {
     })
 
   if (error) {
-    console.error('Upload error:', error)
     throw new Error(`Failed to upload image: ${error.message}`)
   }
 
-  console.log('Upload successful:', data)
 
   const { data: { publicUrl } } = supabase.storage
     .from('product-images')
     .getPublicUrl(filePath)
 
-  console.log('Public URL:', publicUrl)
   return publicUrl
 }
 

@@ -31,11 +31,9 @@ export const authAPI = {
 export const tokenManager = {
   setTokens: (tokens: any, user: any) => {
     
-    console.warn('tokenManager.setTokens is deprecated - tokens are managed automatically');
   },
   getTokens: () => {
     
-    console.warn('tokenManager.getTokens is deprecated - use apiClient methods instead');
     return null;
   },
   getUser: () => {
@@ -43,16 +41,13 @@ export const tokenManager = {
   },
   clearTokens: () => {
     
-    console.warn('tokenManager.clearTokens is deprecated - use apiClient.logout() instead');
   },
   isTokenExpired: (token: string) => {
     
-    console.warn('tokenManager.isTokenExpired is deprecated - handled automatically');
     return false;
   },
   getAuthHeader: () => {
     
-    console.warn('tokenManager.getAuthHeader is deprecated - handled automatically');
     return null;
   }
 };
