@@ -176,30 +176,6 @@ class ApiClient {
       return config;
     });
 
-    this.axiosInstance.interceptors.request.use((config) => {
-      const token = this.getAuthToken();
-      console.log('🔍 DEBUG: API Request to:', config.url);
-      console.log('🔍 DEBUG: Token available:', !!token);
-      
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-
-  // Helper method to handle dynamic API paths
-  private getPath(path: string): string {
-    // If base URL already has /api, remove /api from the path
-    if (this.hasApiPrefix && path.startsWith('/api/')) {
-      return path.replace('/api/', '/');
-    }
-    // If base URL doesn't have /api and path doesn't start with /api, add it
-    if (!this.hasApiPrefix && !path.startsWith('/api/')) {
-      return `/api${path}`;
-    }
-    return path;
-  }
-
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
@@ -221,7 +197,6 @@ class ApiClient {
               }
             }
           } else {
-            console.log('🔄 DEBUG: No refresh token, logging out...');
             this.clearTokens();
             if (typeof window !== 'undefined') {
               window.location.href = '/login';
@@ -235,12 +210,10 @@ class ApiClient {
           const hasActiveTransaction = this.checkActiveTransaction();
           
           if (hasActiveTransaction) {
-            console.log('🔄 Active transaction detected - deferring auto-logout due to 401/403');
             // Store the error for later handling after transaction ends
             this.storeAuthError(error);
             return Promise.reject(error);
           } else {
-            console.log('🔐 Authentication error - auto logout');
             this.clearTokens();
             if (typeof window !== 'undefined') {
               window.location.href = '/login';
@@ -357,13 +330,11 @@ class ApiClient {
       const timeRemaining = payload.exp - currentTime;
       
       if (timeRemaining <= 0) {
-        console.log('� DEBUG: Token expired');
         return true;
       }
       
       return false;
     } catch {
-      console.log('� DEBUG: Invalid token format');
       return true;
     }
   }
@@ -382,16 +353,13 @@ class ApiClient {
       
       // Only refresh if less than 5 minutes remaining
       if (timeRemaining <= 300) {
-        console.log('🔄 PROACTIVE: Token expires soon, refreshing...');
         const tokens = this.getTokens();
         
         if (tokens?.refresh) {
           try {
             const response = await this.refreshToken(tokens.refresh);
             this.setTokens(response, this.getUser()!);
-            console.log('🔄 PROACTIVE: Token refreshed successfully');
           } catch (error) {
-            console.error('🔄 PROACTIVE: Token refresh failed:', error);
             this.clearTokens();
             if (typeof window !== 'undefined') {
               window.location.href = '/login';
@@ -401,13 +369,12 @@ class ApiClient {
       }
     } catch (error) {
       // Silently ignore token parsing errors
-      console.error('🔄 PROACTIVE: Token parsing error:', error);
     }
   }
 
   async validateTokenWithServer(token: string): Promise<boolean> {
     try {
-      const response = await this.request('/accounts/validate-token/', {
+      const response = await this.request<{ valid: boolean }>('/accounts/validate-token/', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -415,7 +382,6 @@ class ApiClient {
       });
       return response.valid === true;
     } catch (error) {
-      console.log('🔐 DEBUG: Token validation failed:', error);
       return false;
     }
   }
@@ -428,14 +394,12 @@ class ApiClient {
     
     // Skip validation if there's an active transaction
     if (this.checkActiveTransaction()) {
-      console.log('🔄 Active transaction detected - skipping token expiry check');
       return;
     }
   
     // Validate token with server
     const isValid = await this.validateTokenWithServer(token);
     if (!isValid) {
-      console.log('🔐 Token expired during session - auto logout');
       this.clearTokens();
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
@@ -477,9 +441,8 @@ class ApiClient {
     const deduplicationKey = `${endpoint}_${JSON.stringify(options.params || {})}`;
      
     if (options.method?.toUpperCase() === 'PATCH' || options.skipCache) {
-      console.log('Skipping cache for request:', endpoint, options.skipCache ? '(skipCache)' : '(PATCH)');
+      // Skip cache for PATCH requests or when skipCache is true
     } else {
-       
       const cachedData = this.getFromCache(cacheKey);
       if (cachedData) {
         return cachedData;
@@ -511,7 +474,7 @@ class ApiClient {
 
         return response.data;
       } catch (error: any) {
-        console.error('API Request failed:', error);
+        // Handle API request errors
 
         if (error.response) {
           
@@ -585,7 +548,6 @@ class ApiClient {
     categories: Category[];
     brands: Brand[];
   }> {
-    console.log('Fetching initial data in parallel...');
     const [featured_products, categories, brands] = await Promise.all([
       this.getFeaturedProducts(),
       this.getCategories(),
@@ -596,8 +558,6 @@ class ApiClient {
   }
 
   async getProducts(filters: SearchFilters = {}, options: { skipCache?: boolean } = {}): Promise<ProductsResponse> {
-    console.log('🏷️ API Client - getProducts() called - THIS GETS FILTERED PRODUCTS');
-    console.log('🏷️ Filters:', filters, 'skipCache:', options.skipCache);
     const params: any = {};
 
     if (filters.category) params.category = filters.category.toString();
@@ -617,8 +577,6 @@ class ApiClient {
     // Add skip_cache parameter for debugging
     params.skip_cache = 'true';
 
-    console.log('🔧 Final params being sent to backend:', params);
-
     const endpoint = '/products/public/';  
     
     const result = await this.request<ProductsResponse>(endpoint, {
@@ -627,7 +585,6 @@ class ApiClient {
       skipCache: options.skipCache,
     });
     
-    console.log('🏷️ API Client - getProducts() result count:', result.count);
     return result;
   }
 
@@ -636,9 +593,7 @@ class ApiClient {
   }
 
   async getFeaturedProducts(): Promise<Product[]> {
-    console.log('API Client: Fetching featured products from', `${API_BASE_URL}/products/featured/`);
     const result = await this.request<Product[]>('/products/featured/');
-    console.log('API Client: Got featured products:', result);
     return result;
   }
 
@@ -671,7 +626,6 @@ class ApiClient {
         const data = await response.json();
         return data;
       } catch (fallbackError) {
-        console.error('🏷️ Fallback also failed:', fallbackError);
         throw error; // Throw original error
       }
     }
@@ -702,7 +656,6 @@ class ApiClient {
         const data = await response.json();
         return data;
       } catch (fallbackError) {
-        console.error('🏷️ Fallback also failed:', fallbackError);
         throw error; // Throw original error
       }
     }
@@ -747,10 +700,7 @@ class ApiClient {
   }
 
   async login(username: string, password: string): Promise<LoginResponse> {
-    console.log('API CLIENT DEBUG: login called with username:', username);
-    console.log('API CLIENT DEBUG: login called with password:', password ? '***' : 'undefined');
     const requestData = { username, password };
-    console.log('API CLIENT DEBUG: Request data being sent:', requestData);
     const response: AxiosResponse<LoginResponse> = await this.axiosInstance.post('/accounts/login/', requestData);
 
     this.setTokens(response.data.tokens, response.data.user);
@@ -775,7 +725,7 @@ class ApiClient {
         return response.data;
       }
     } catch (error) {
-      console.warn('Logout request failed:', error);
+      // Logout request failed
     } finally {
       this.clearTokens();
     }
@@ -783,21 +733,14 @@ class ApiClient {
   }
 
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
-    console.log('🔄 DEBUG: Attempting to refresh token...');
-    console.log('🔄 DEBUG: Refresh token preview:', refreshToken ? `${refreshToken.substring(0, 20)}...` : 'none');
-    
     try {
       const response: AxiosResponse<AuthTokens> = await axios.post(
         `${API_BASE_URL}/accounts/refresh/`,
         { refresh: refreshToken }
       );
       
-      console.log('🔄 DEBUG: Token refresh successful!');
-      console.log('🔄 DEBUG: New access token preview:', response.data.access ? `${response.data.access.substring(0, 20)}...` : 'none');
-      
       return response.data;
     } catch (error: any) {
-      console.error('🔄 DEBUG: Token refresh failed:', error.response?.status, error.response?.data);
       throw error;
     }
   }
@@ -826,7 +769,6 @@ class ApiClient {
     // Validate token with server
     const isValid = await this.validateTokenWithServer(token);
     if (!isValid) {
-      console.log('🔐 DEBUG: Token invalid, clearing user data');
       this.clearTokens();
       return null;
     }

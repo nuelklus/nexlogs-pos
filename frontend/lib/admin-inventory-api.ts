@@ -1,4 +1,15 @@
-import { apiClient } from './api';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://your-production-backend.com';
+
+// Helper function to get auth token
+const getAuthHeaders = () => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('access_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+  return {};
+};
 
 export interface InventoryTransaction {
   id: number;
@@ -83,10 +94,10 @@ export interface InventoryOverview {
 export const adminInventoryApi = {
   
   getInventoryOverview: async (): Promise<InventoryOverview> => {
-    const response = await apiClient.request<InventoryOverview>('/admin/inventory/overview/', {
-      method: 'GET',
+    const response = await axios.get<InventoryOverview>(`${API_BASE_URL}/admin/inventory/overview/`, {
+      headers: getAuthHeaders(),
     });
-    return response;
+    return response.data;
   },
 
   getInventoryTransactions: async (params?: {
@@ -113,17 +124,10 @@ export const adminInventoryApi = {
       });
     }
     
-    const response = await apiClient.request(`/admin/inventory/transactions/?${queryParams}`, {
-      method: 'GET',
+    const response = await axios.get(`/admin/inventory/transactions/?${queryParams}`, {
+      headers: getAuthHeaders(),
     });
-    return response as {
-      results: InventoryTransaction[];
-      count: number;
-      num_pages: number;
-      current_page: number;
-      has_next: boolean;
-      has_previous: boolean;
-    };
+    return response.data;
   },
 
   createInventoryTransaction: async (data: {
@@ -133,11 +137,10 @@ export const adminInventoryApi = {
     reference?: string;
     notes?: string;
   }): Promise<{ id: number; message: string }> => {
-    const response = await apiClient.request('/admin/inventory/transactions/create/', {
-      method: 'POST',
-      data,
+    const response = await axios.post('/admin/inventory/transactions/create/', data, {
+      headers: getAuthHeaders(),
     });
-    return response as { id: number; message: string };
+    return response.data;
   },
 
   getStockAlerts: async (params?: {
@@ -153,24 +156,24 @@ export const adminInventoryApi = {
       });
     }
     
-    const response = await apiClient.request(`/admin/inventory/alerts/?${queryParams}`, {
-      method: 'GET',
+    const response = await axios.get(`/admin/inventory/alerts/?${queryParams}`, {
+      headers: getAuthHeaders(),
     });
-    return response as StockAlert[];
+    return response.data;
   },
 
   resolveStockAlert: async (alertId: number): Promise<{ message: string }> => {
-    const response = await apiClient.request(`/admin/inventory/alerts/${alertId}/resolve/`, {
-      method: 'POST',
+    const response = await axios.post(`/admin/inventory/alerts/${alertId}/resolve/`, {}, {
+      headers: getAuthHeaders(),
     });
-    return response as { message: string };
+    return response.data;
   },
 
   getPendingApprovals: async (): Promise<ProductApproval[]> => {
-    const response = await apiClient.request('/admin/approvals/pending/', {
-      method: 'GET',
+    const response = await axios.get('/admin/approvals/pending/', {
+      headers: getAuthHeaders(),
     });
-    return response as ProductApproval[];
+    return response.data;
   },
 
   processApproval: async (
@@ -178,13 +181,12 @@ export const adminInventoryApi = {
     action: 'approve' | 'reject',
     notes?: string
   ): Promise<{ message: string }> => {
-    const response = await apiClient.request(`/admin/approvals/${approvalId}/process/`, {
-      method: 'POST',
-      data: {
-        action,
-        notes,
-      },
+    const response = await axios.post(`/admin/approvals/${approvalId}/process/`, {
+      action,
+      notes,
+    }, {
+      headers: getAuthHeaders(),
     });
-    return response as { message: string };
+    return response.data;
   },
 };
