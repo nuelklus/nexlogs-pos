@@ -60,16 +60,14 @@ function AddProductContent() {
       setCategoriesError('');
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/products/categories/`);
+      const response = await fetch(`${apiUrl}/products/categories/`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
       
       const data = await response.json();
       setCategories(data);
-      console.log('✅ Categories loaded:', data);
     } catch (error) {
-      console.error('❌ Error fetching categories:', error);
       setCategoriesError('Failed to load categories');
       // Fallback to hardcoded categories if API fails
       setCategories([
@@ -95,16 +93,14 @@ function AddProductContent() {
       setBrandsError('');
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/products/brands/`);
+      const response = await fetch(`${apiUrl}/products/brands/`);
       if (!response.ok) {
         throw new Error('Failed to fetch brands');
       }
       
       const data = await response.json();
       setBrands(data);
-      console.log('✅ Brands loaded:', data);
     } catch (error) {
-      console.error('❌ Error fetching brands:', error);
       setBrandsError('Failed to load brands');
       // Fallback to hardcoded brands if API fails
       setBrands([
