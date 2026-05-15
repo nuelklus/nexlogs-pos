@@ -23,11 +23,13 @@ interface HardwareCardProps {
   product: Product;
   onQuickAdd?: (productId: string, quantity: number) => void;
   className?: string;
+  priority?: boolean;
 }
 
 export const HardwareCard = memo<HardwareCardProps>(({ 
   product, 
-  className = ''
+  className = '',
+  priority = false
 }) => {
   const { addToCart, isInCart } = useCart();
   const [isAdding, setIsAdding] = useState(false);
@@ -116,7 +118,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
             src={product.image_url || product.image || ''}
             alt={product.name}
             className="object-cover group-hover:scale-105 transition-transform duration-200"
-            priority={false}
+            priority={priority}
           />
         </Link>
 

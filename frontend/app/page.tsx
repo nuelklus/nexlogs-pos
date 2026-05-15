@@ -24,7 +24,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 
 const HardwareCard = dynamic(() => import('@/components/products/HardwareCard').then(mod => ({ default: mod.HardwareCard })), {
   loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>,
-  ssr: false
+  ssr: true
 });
 
 
@@ -246,11 +246,12 @@ export default function HomePage() {
               </div>
             ) : transformedProducts.length > 0 ? (
               <>
-                {transformedProducts.map((product) => (
+                {transformedProducts.map((product, index) => (
                   <HardwareCard
                     key={product.id}
                     product={product}
                     onQuickAdd={handleQuickAdd}
+                    priority={index < 3}
                   />
                 ))}
                 {retryCount > 0 && (

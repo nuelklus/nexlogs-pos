@@ -10,6 +10,7 @@ interface OptimizedImageProps {
   priority?: boolean;
   fallback?: string;
   blurDataURL?: string;
+  fetchPriority?: 'high' | 'low' | 'auto';
 }
 
 export function OptimizedImage({ 
@@ -20,7 +21,8 @@ export function OptimizedImage({
   className = '',
   priority = false,
   fallback = '/images/product-placeholder.png',
-  blurDataURL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A'
+  blurDataURL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A',
+  fetchPriority = 'auto'
 }: OptimizedImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +40,7 @@ export function OptimizedImage({
         }
       },
       {
-        rootMargin: '50px', 
+        rootMargin: '0px', 
         threshold: 0.1
       }
     );
@@ -80,6 +82,7 @@ export function OptimizedImage({
           onError={handleError}
           onLoad={handleLoad}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          fetchPriority={fetchPriority}
         />
       ) : (
         <div className="absolute inset-0 bg-gray-200 rounded-lg" />
