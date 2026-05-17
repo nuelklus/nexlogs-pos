@@ -134,9 +134,9 @@ export async function uploadProductFinal(formData: FormData) {
       }
     }
     console.log('🔐 Authorization: Bearer [token]')
-    console.log('🌐 URL:', `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/create/`)
+    console.log('🌐 URL:', `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/create/`)
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/products/create/`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/create/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
