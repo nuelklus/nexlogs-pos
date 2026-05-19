@@ -172,7 +172,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
         </div>
 
         {}
-        <Link href={`/products/${product.id}`}>
+        <Link href={`/products/${product.slug}`}>
           <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
@@ -226,7 +226,7 @@ export const HardwareCard = memo<HardwareCardProps>(({
       {}
       <CardFooter className="p-4 pt-0">
         <div className="flex gap-2 w-full">
-          <Link href={`/products/${product.id}`} className="flex-1">
+          <Link href={`/products/${product.slug}`} className="flex-1">
             <Button variant="outline" className="w-full">
               View Details
             </Button>
