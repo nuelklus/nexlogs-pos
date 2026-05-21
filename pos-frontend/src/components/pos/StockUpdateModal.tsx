@@ -77,7 +77,7 @@ export function StockUpdateModal({ product, onUpdate, onClose }: StockUpdateModa
                 alt={product.name}
                 className="w-16 h-16 object-cover rounded-lg"
                 onError={(e) => {
-                  e.currentTarget.src = '/api/placeholder/64/64';
+                  e.currentTarget.src = '/images/product-placeholder.png';
                 }}
               />
             ) : (

@@ -574,9 +574,6 @@ class ApiClient {
     if (filters.page) params.page = filters.page.toString();
     if (filters.page_size) params.page_size = filters.page_size.toString();
 
-    // Add skip_cache parameter for debugging
-    params.skip_cache = 'true';
-
     const endpoint = '/products/public/';  
     
     const result = await this.request<ProductsResponse>(endpoint, {

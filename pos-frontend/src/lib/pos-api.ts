@@ -139,7 +139,7 @@ class POSApiClient {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_POS_API_URL || 'http://localhost:8000/api';
+    this.baseURL = process.env.NEXT_PUBLIC_POS_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com/api';
     
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
@@ -371,18 +371,3 @@ class POSApiClient {
 
 // Create singleton instance
 export const posApiClient = new POSApiClient();
-
-// Export types
-export type {
-  POSAuth,
-  POSAuthResponse,
-  Product,
-  StockUpdateRequest,
-  StockUpdateResponse,
-  BulkStockUpdateRequest,
-  BulkStockUpdateResponse,
-  SyncStatusResponse,
-  LowStockAlert,
-  LowStockAlertResponse,
-  POSHealthResponse
-};

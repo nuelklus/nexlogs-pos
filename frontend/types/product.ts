@@ -7,7 +7,9 @@ export interface Product {
   category: string | { id: string; name: string; slug: string };
   price: number;
   currency: 'GHS';
-  image: string; 
+  image: string;
+  image_width?: number;
+  image_height?: number;
   slug: string; 
   brand: string | { id: string; name: string; slug: string };
   rating: number;

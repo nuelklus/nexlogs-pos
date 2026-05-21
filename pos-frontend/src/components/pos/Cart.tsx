@@ -79,7 +79,7 @@ export function Cart({ selectedProduct, onStockUpdate }: CartProps) {
                   alt={selectedProduct.name}
                   className="w-full h-48 object-cover rounded-lg"
                   onError={(e) => {
-                    e.currentTarget.src = '/api/placeholder/300/200';
+                    e.currentTarget.src = '/images/product-placeholder.png';
                   }}
                 />
               ) : (

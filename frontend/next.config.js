@@ -112,6 +112,22 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+        ],
+        has: [
+          {
+            type: 'header',
+            key: 'host',
+            value: 'xachljqxtnhnmbpcnymt.supabase.co',
+          },
+        ],
+      },
     ];
   },
 

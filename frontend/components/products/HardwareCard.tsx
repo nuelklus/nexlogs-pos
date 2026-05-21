@@ -113,10 +113,12 @@ export const HardwareCard = memo<HardwareCardProps>(({
     <Card className={`group hover:shadow-lg transition-shadow duration-200 ${className}`}>
       {}
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-50">
-        <Link href={`/products/${product.slug}`}>
+        <Link href={`/products/${product.slug}`} prefetch={true}>
           <OptimizedImage
             src={product.image_url || product.image || ''}
             alt={product.name}
+            width={product.image_width || 400}
+            height={product.image_height || 300}
             className="object-cover group-hover:scale-105 transition-transform duration-200"
             priority={priority}
           />

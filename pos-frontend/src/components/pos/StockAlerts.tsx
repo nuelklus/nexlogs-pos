@@ -83,7 +83,7 @@ export function StockAlerts({ storeId }: StockAlertsProps) {
                       alt={alert.name}
                       className="w-10 h-10 object-cover rounded"
                       onError={(e) => {
-                        e.currentTarget.src = '/api/placeholder/40/40';
+                        e.currentTarget.src = '/images/product-placeholder.png';
                       }}
                     />
                   ) : (

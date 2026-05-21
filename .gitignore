@@ -48,3 +48,5 @@ build/
 # Backup files
 *.bak
 *.backup
+
+*.zip

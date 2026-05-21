@@ -2,10 +2,10 @@
 
 export const env = {
   // Backend API URL
-  NEXT_PUBLIC_POS_API_URL: process.env.NEXT_PUBLIC_POS_API_URL || 'http://localhost:8000/api/pos',
+  NEXT_PUBLIC_POS_API_URL: process.env.NEXT_PUBLIC_POS_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com/api/pos',
   
   // WebSocket URL
-  NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws/stock/',
+  NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'wss://hardware-ecommerce-monorepo.onrender.com/ws/stock/',
   
   // Store configuration
   NEXT_PUBLIC_DEFAULT_STORE_ID: process.env.NEXT_PUBLIC_DEFAULT_STORE_ID || 'main',

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { HardwareCard } from '@/components/products/HardwareCard';
@@ -47,7 +47,7 @@ function ProductsPageContent() {
   });
 
   const hookResult = useProducts({ immediate: true, filters });
-const { products, loading, error, refetch, invalidateCache, pagination, loadPage } = hookResult;
+  const { products, loading, error, refetch, invalidateCache, pagination, loadPage } = hookResult;
 
 console.log('🔍 Hook result:', hookResult);
 console.log('🔍 loadPage function:', loadPage);
@@ -62,7 +62,7 @@ console.log('🔍 loadPage function:', loadPage);
     const minPrice = searchParams.get('min_price');
     const maxPrice = searchParams.get('max_price');
     const inStock = searchParams.get('in_stock');
-    
+
     const newFilters: SearchFilters = {};
     if (category) newFilters.category = category;
     if (brand) newFilters.brand = brand;
@@ -70,30 +70,26 @@ console.log('🔍 loadPage function:', loadPage);
     if (minPrice) newFilters.min_price = parseFloat(minPrice);
     if (maxPrice) newFilters.max_price = parseFloat(maxPrice);
     if (inStock) newFilters.in_stock = inStock === 'true';
-    
-    console.log('🔄 URL params changed, updating filters:', newFilters);
-    console.log('🗑️ Previous filters:', filters);
-    console.log('🆕 New filters:', newFilters);
-    setFilters(newFilters);
-    invalidateCache(); // Always invalidate cache when URL changes
-    console.log('🧹 Cache invalidated');
-    
-    // Force refetch after URL change (this fixes header dropdown issue)
-    setTimeout(() => {
-      console.log('🔄 Force refetch after URL change');
-      refetch();
-    }, 100);
-  }, [searchParams]); // Only depend on searchParams
+
+    // Only invalidate cache if filters actually changed
+    const filtersChanged = JSON.stringify(newFilters) !== JSON.stringify(filters);
+    if (filtersChanged) {
+      console.log('🔄 URL params changed, updating filters:', newFilters);
+      setFilters(newFilters);
+      invalidateCache(); // Only invalidate cache when filters actually change
+      console.log('🧹 Cache invalidated');
+    }
+  }, [searchParams, filters, invalidateCache]);
 
   const updateFilters = useCallback((newFilters: SearchFilters) => {
     const params = new URLSearchParams();
-    
+
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params.set(key, value.toString());
       }
     });
-    
+
     router.push(`/products?${params.toString()}`);
     setFilters(newFilters);
   }, [router]);
@@ -355,29 +351,5 @@ function ProductCardSkeleton() {
 }
 
 export default function ProductsPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50">
-        <div className="animate-pulse">
-          <div className="h-16 bg-gray-200"></div>
-          <div className="container mx-auto px-4 py-8">
-            <div className="h-8 bg-gray-200 rounded mb-4 w-1/4"></div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="bg-white rounded-lg border border-gray-200 p-4">
-                  <div className="bg-gray-200 h-48 rounded-lg mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-10 bg-gray-200 rounded"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    }>
-      <ProductsPageContent />
-    </Suspense>
-  );
+  return <ProductsPageContent />;
 }

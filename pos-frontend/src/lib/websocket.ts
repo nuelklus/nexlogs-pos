@@ -152,8 +152,8 @@ class StockSyncManager {
 
         this.socket.onerror = (error) => {
           clearTimeout(overallTimeout);
-          const errorMessage = error?.message || 'Connection refused';
-          console.error('❌ WebSocket connection error:', errorMessage);
+          const errorMessage = 'Connection refused';
+          console.error('❌ WebSocket connection error:', error);
           this.connectionStatus.reconnectAttempts++;
           
           this.emit('connection_status', this.connectionStatus);

@@ -95,21 +95,30 @@ export default function HomePage() {
 
   const transformedProducts = useMemo(() => {
     if (!data?.featured_products) return [];
-    
+
     return data.featured_products.map((product: any) => {
-      
+
       let imageUrl = product.image_url;
 
       if (imageUrl && imageUrl.startsWith('/')) {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000';
         imageUrl = `${baseUrl}${imageUrl}`;
       }
-      
+
       // Add fallback if no image URL exists
       if (!imageUrl) {
         imageUrl = '/images/no-image-available.svg';
       }
-      
+
+      // Preload first 3 product images
+      if (typeof window !== 'undefined' && product.id <= 3) {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = imageUrl;
+        document.head.appendChild(link);
+      }
+
       return {
         id: product.id.toString(),
         name: product.name,
@@ -117,7 +126,7 @@ export default function HomePage() {
         description: product.short_description,
         price: parseFloat(product.price),
         currency: 'GHS' as const,
-        image: imageUrl, 
+        image: imageUrl,
         category: product.category.name,
         brand: product.brand.name,
         rating: 4.5,
@@ -126,7 +135,7 @@ export default function HomePage() {
           { label: 'Voltage', value: '18V', type: 'voltage' as const },
           { label: 'Material', value: 'Stainless Steel', type: 'material' as const },
         ],
-        stockStatus: product.stock_status.status === 'in_stock' ? 'in_stock' as const : 
+        stockStatus: product.stock_status.status === 'in_stock' ? 'in_stock' as const :
                     product.stock_status.status === 'low_stock' ? 'low_stock' as const : 'out_of_stock' as const,
         warehouse: {
           id: "1",
@@ -251,7 +260,7 @@ export default function HomePage() {
                     key={product.id}
                     product={product}
                     onQuickAdd={handleQuickAdd}
-                    priority={index < 3}
+                    priority={index < 6}
                   />
                 ))}
                 {retryCount > 0 && (
@@ -271,7 +280,7 @@ export default function HomePage() {
           </div>
 
           <div className="text-center">
-            <Link href="/products">
+            <Link href="/products" prefetch={true}>
               <Button size="lg" variant="outline" className="border-brand-charcoal text-brand-charcoal hover:bg-brand-yellow hover:text-brand-charcoal hover:border-brand-yellow">
                 View All Products
                 <ChevronRight className="ml-2 h-5 w-5" />
@@ -346,10 +355,13 @@ export default function HomePage() {
               <div className="flex items-center space-x-3 mb-6">
                 <div className="relative">
                   <div className="absolute inset-0 bg-brand-yellow/20 rounded-lg blur-xl"></div>
-                  <img 
+                  <Image 
                     src="/images/ASDLogo.png" 
                     alt="AllShopsDepot Logo" 
+                    width={48}
+                    height={48}
                     className="relative h-12 w-auto object-contain filter brightness-0 invert"
+                    priority
                   />
                 </div>
                 <div>

@@ -78,7 +78,8 @@ export function PaymentModal({ isOpen, onClose, cartItems, totals }: PaymentModa
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert(`Payment failed: ${error.message || 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Payment failed: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }

@@ -205,9 +205,9 @@ export default function ProductDetailPage() {
       <div className="container mx-auto px-4 py-8">
         {}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
-          <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+          <Link href="/" className="hover:text-blue-600 transition-colors" prefetch={false}>Home</Link>
           <ChevronRight className="h-4 w-4" />
-          <Link href="/products" className="hover:text-blue-600 transition-colors">Products</Link>
+          <Link href="/products" className="hover:text-blue-600 transition-colors" prefetch={true}>Products</Link>
           <ChevronRight className="h-4 w-4" />
           <span className="text-gray-900 font-medium">{product.name}</span>
         </nav>
@@ -487,7 +487,7 @@ export default function ProductDetailPage() {
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Similar Products</h2>
               <p className="text-gray-600 mt-2">Customers who viewed this item also viewed</p>
             </div>
-            <Link href="/products">
+            <Link href="/products" prefetch={true}>
               <Button variant="outline" className="hidden md:flex">
                 View All Products
                 <ChevronRight className="ml-2 h-4 w-4" />
@@ -540,10 +540,10 @@ export default function ProductDetailPage() {
 
           {}
           <div className="mt-8 md:hidden">
-            <Link href="/products">
+            <Link href="/products" prefetch={true}>
               <Button variant="outline" className="w-full">
                 View All Products
-                <ChevronRight className="ml-2 h-4 w-4" />
+                <ChevronRight className="ml-2 h-4 w-5" />
               </Button>
             </Link>
           </div>

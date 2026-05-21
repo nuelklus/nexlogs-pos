@@ -64,7 +64,7 @@ export function ProductGrid({ products, selectedProduct, onProductSelect, onStoc
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       // Fallback to placeholder
-                      e.currentTarget.src = '/api/placeholder/200/150';
+                      e.currentTarget.src = '/images/product-placeholder.png';
                     }}
                   />
                 ) : (
