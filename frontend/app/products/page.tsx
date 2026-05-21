@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { HardwareCard } from '@/components/products/HardwareCard';
@@ -41,7 +41,7 @@ function ProductsPageContent() {
     if (search) initialFilters.search = search;
     if (minPrice) initialFilters.min_price = parseFloat(minPrice);
     if (maxPrice) initialFilters.max_price = parseFloat(maxPrice);
-    if (inStock) initialFilters.in_stock = inStock === 'true';
+    if (inStock) initialFilters.inStock = inStock === 'true';
     
     return initialFilters;
   });
@@ -69,7 +69,7 @@ console.log('🔍 loadPage function:', loadPage);
     if (search) newFilters.search = search;
     if (minPrice) newFilters.min_price = parseFloat(minPrice);
     if (maxPrice) newFilters.max_price = parseFloat(maxPrice);
-    if (inStock) newFilters.in_stock = inStock === 'true';
+    if (inStock) newFilters.inStock = inStock === 'true';
 
     // Only invalidate cache if filters actually changed
     const filtersChanged = JSON.stringify(newFilters) !== JSON.stringify(filters);
@@ -198,7 +198,6 @@ console.log('🔍 loadPage function:', loadPage);
                       <SelectValue placeholder="All categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={undefined}>All categories</SelectItem>
                       {categories.map((category: any) => (
                         <SelectItem key={category.id} value={category.slug}>
                           {category.name}
@@ -221,7 +220,6 @@ console.log('🔍 loadPage function:', loadPage);
                       <SelectValue placeholder="All brands" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={undefined}>All brands</SelectItem>
                       {brands.map((brand: any) => (
                         <SelectItem key={brand.id} value={brand.slug}>
                           {brand.name}
@@ -260,8 +258,8 @@ console.log('🔍 loadPage function:', loadPage);
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="in-stock"
-                    checked={filters.in_stock === true}
-                    onCheckedChange={(checked) => handleFilterChange('in_stock', checked)}
+                    checked={filters.inStock === true}
+                    onCheckedChange={(checked) => handleFilterChange('inStock', checked)}
                   />
                   <label htmlFor="in-stock" className="text-sm font-medium text-gray-700">
                     In stock only
@@ -351,5 +349,9 @@ function ProductCardSkeleton() {
 }
 
 export default function ProductsPage() {
-  return <ProductsPageContent />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProductsPageContent />
+    </Suspense>
+  );
 }
