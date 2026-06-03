@@ -58,44 +58,63 @@ export function Receipt({ transaction }: ReceiptProps) {
     <head>
       <title>Receipt - ${transaction.receipt_number}</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { margin: 0; color: #333; }
-        .header p { margin: 5px 0; color: #666; }
-        .transaction-info { margin-bottom: 20px; }
-        .transaction-info div { margin: 5px 0; }
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        .items-table th, .items-table td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
-        .items-table th { background-color: #f5f5f5; }
-        .totals { margin-bottom: 20px; }
-        .totals div { display: flex; justify-content: space-between; margin: 5px 0; }
-        .totals .total { font-weight: bold; font-size: 18px; border-top: 1px solid #ddd; padding-top: 10px; }
-        .footer { text-align: center; margin-top: 30px; color: #666; }
-        .payment-info { margin-bottom: 20px; background-color: #f9f9f9; padding: 15px; border-radius: 5px; }
+        @page {
+          size: 80mm auto;
+          margin: 0;
+        }
+        body { 
+          font-family: 'Courier New', monospace; 
+          padding: 5mm; 
+          max-width: 80mm; 
+          margin: 0 auto; 
+          font-size: 10px;
+          color: #000;
+        }
+        .header { text-align: center; margin-bottom: 3mm; }
+        .header h1 { margin: 0; font-size: 12px; font-weight: bold; }
+        .header p { margin: 1mm 0; font-size: 9px; }
+        .transaction-info { margin-bottom: 3mm; }
+        .transaction-info div { margin: 1mm 0; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+        .items-table th, .items-table td { padding: 1mm; text-align: left; }
+        .items-table th { border-bottom: 1px dashed #000; }
+        .items-table td { border-bottom: 1px dotted #ccc; }
+        .totals { margin-bottom: 3mm; }
+        .totals div { display: flex; justify-content: space-between; margin: 1mm 0; }
+        .totals .total { font-weight: bold; font-size: 11px; border-top: 1px dashed #000; padding-top: 1mm; }
+        .footer { text-align: center; margin-top: 3mm; }
+        .payment-info { margin-bottom: 3mm; }
+        .separator { border-top: 1px dashed #000; margin: 2mm 0; }
+        .double-separator { border-top: 2px double #000; margin: 2mm 0; }
+        @media print {
+          body { padding: 2mm; }
+        }
       </style>
     </head>
     <body>
+      <div class="double-separator"></div>
       <div class="header">
-        <h1>HARDWARE STORE</h1>
-        <p>123 Main Street, Accra, Ghana</p>
-        <p>Tel: +233 123 456 789</p>
-        <p>📧 info@hardwarestore.com</p>
+        <h1>Gee-Gees Unisex Salon and Spa</h1>
+        <p>Opposite Ho Teaching Hospital main Entrance, Ho</p>
+        <p>Tel: 0245821322</p>
+        <p>TIN: C0001234567</p>
       </div>
+      <div class="double-separator"></div>
 
       <div class="transaction-info">
-        <div><strong>Receipt #:</strong> ${transaction.receipt_number}</div>
-        <div><strong>Transaction ID:</strong> ${transaction.transaction_id}</div>
+        <div><strong>Receipt No:</strong> ${transaction.receipt_number}</div>
         <div><strong>Date:</strong> ${new Date(transaction.created_at).toLocaleString()}</div>
         <div><strong>Cashier:</strong> ${transaction.user_name}</div>
       </div>
 
+      <div class="separator"></div>
+
       <table class="items-table">
         <thead>
           <tr>
-            <th>Item</th>
-            <th>Qty</th>
-            <th>Price</th>
-            <th>Total</th>
+            <th style="width: 50%">Item</th>
+            <th style="width: 15%">Qty</th>
+            <th style="width: 35%">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -103,30 +122,36 @@ export function Receipt({ transaction }: ReceiptProps) {
             <tr>
               <td>${item.product_name}</td>
               <td>${item.quantity}</td>
-              <td>${formatCurrency(item.unit_price)}</td>
               <td>${formatCurrency(item.total_price)}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
 
+      <div class="separator"></div>
+
       <div class="totals">
-        <div><span>Subtotal:</span><span>${formatCurrency(transaction.subtotal)}</span></div>
-        <div><span>Tax (12%):</span><span>${formatCurrency(transaction.tax_amount)}</span></div>
-        <div class="total"><span>Total:</span><span>${formatCurrency(transaction.total_amount)}</span></div>
+        <div><span>Sub Total:</span><span>${formatCurrency(transaction.subtotal)}</span></div>
+        <div><span>NHIL (2.5%):</span><span>${formatCurrency(transaction.tax_amount * 0.2083)}</span></div>
+        <div><span>GETFund (2.5%):</span><span>${formatCurrency(transaction.tax_amount * 0.2083)}</span></div>
+        <div><span>VAT (15%):</span><span>${formatCurrency(transaction.tax_amount * 0.5834)}</span></div>
+        <div class="total"><span>TOTAL:</span><span>${formatCurrency(transaction.total_amount)}</span></div>
       </div>
 
+      <div class="separator"></div>
+
       <div class="payment-info">
-        <div><strong>Payment Method:</strong> ${transaction.payment_method.toUpperCase()}</div>
+        <div><strong>Payment:</strong> ${transaction.payment_method.toUpperCase()}</div>
         <div><strong>Amount Paid:</strong> ${formatCurrency(transaction.amount_paid)}</div>
         <div><strong>Change:</strong> ${formatCurrency(transaction.change_amount)}</div>
       </div>
 
+      <div class="separator"></div>
+
       <div class="footer">
-        <p>Thank you for your purchase!</p>
-        <p>Please come again</p>
-        <p>--- End of Receipt ---</p>
+        <p>Thank You For Shopping With Us</p>
       </div>
+      <div class="double-separator"></div>
     </body>
     </html>
   `;

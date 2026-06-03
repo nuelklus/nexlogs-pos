@@ -3,17 +3,20 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from django.db import transaction, models
 from apps.products.models import Product, StockSyncLog
-from apps.products.serializers import ProductListSerializer
+from apps.products.serializers import ProductListSerializer, ProductCreateUpdateSerializer
+from apps.accounts.models import StaffRole
 from .serializers import (
     POSProductSerializer, StockUpdateSerializer, BulkStockUpdateSerializer,
     StockSyncLogSerializer, LowStockAlertSerializer, TransactionSerializer,
     CreateTransactionSerializer, TransactionItemSerializer, RefundSerializer
 )
 from .models import Transaction, TransactionItem, Refund
+from .permissions import CanUpdateStock, CanCreateProduct
 import json
 
 class POSProductViewSet(viewsets.ModelViewSet):
@@ -54,7 +57,7 @@ class POSProductViewSet(viewsets.ModelViewSet):
             'store_id': store_id
         })
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[CanUpdateStock])
     def update_stock(self, request):
         """Update stock from POS with conflict resolution"""
         product_id = request.data.get('product_id')
@@ -142,7 +145,7 @@ class POSProductViewSet(viewsets.ModelViewSet):
                 'detail': str(e)
             }, status=500)
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[CanUpdateStock])
     def bulk_stock_update(self, request):
         """Update multiple products stock at once"""
         updates = request.data.get('updates', [])
@@ -277,6 +280,20 @@ class POSProductViewSet(viewsets.ModelViewSet):
                 for log in recent_logs
             ]
         })
+    
+    @action(detail=False, methods=['post'], permission_classes=[CanCreateProduct])
+    def create_product(self, request):
+        """Create a new product from POS (Admin, Manager, Inventory Staff only)"""
+        serializer = ProductCreateUpdateSerializer(data=request.data)
+        if serializer.is_valid():
+            product = serializer.save()
+            # Set POS-specific fields
+            product.pos_store_id = request.data.get('store_id', 'main')
+            product.pos_stock_quantity = product.stock_quantity
+            product.last_pos_sync = timezone.now()
+            product.save()
+            return Response(ProductListSerializer(product).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -316,9 +333,17 @@ def pos_login(request):
         return Response({
             'error': 'Account is disabled'
         }, status=status.HTTP_401_UNAUTHORIZED)
-    
+    # ROLE CHECK
+    if user.role != 'STAFF':
+        return Response({
+            'error': 'Only staff users can login to POS'
+        }, status=status.HTTP_403_FORBIDDEN)
     # Generate tokens
     refresh = RefreshToken.for_user(user)
+    
+    # Calculate actual expiration time from JWT settings
+    access_token_lifetime = jwt_settings.ACCESS_TOKEN_LIFETIME
+    expires_in_seconds = int(access_token_lifetime.total_seconds())
     
     return Response({
         'access': str(refresh.access_token),
@@ -330,9 +355,10 @@ def pos_login(request):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'role': getattr(user, 'role', 'STAFF'),
+            'staff_role': getattr(user, 'staff_role', None),
         },
         'store_id': store_id,
-        'expires_in': 3600  # 1 hour
+        'expires_in': expires_in_seconds
     })
 
 

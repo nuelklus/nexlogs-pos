@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from typing import Dict, Tuple, Optional
-from .models import UserRole
+from .models import UserRole, StaffRole
 
 User = get_user_model()
 
@@ -15,16 +15,18 @@ class AuthService:
     @staticmethod
     @transaction.atomic
     def register_user(*, username: str, password: str, email: str = "", 
-                     role: str = "CUSTOMER", phone_number: str = "") -> Tuple[User, Dict[str, str]]:
+                     role: str = "CUSTOMER", phone_number: str = "", 
+                     staff_role: str = "") -> Tuple[User, Dict[str, str]]:
         """
-        Register a new user with optional Pro-Contractor role
+        Register a new user with optional Pro-Contractor or Staff role
         
         Args:
             username: Unique username
             password: User password
             email: User email (optional)
-            role: User role (CUSTOMER, PRO_CONTRACTOR, ADMIN)
+            role: User role (CUSTOMER, PRO_CONTRACTOR, STAFF)
             phone_number: User phone number (optional)
+            staff_role: Staff role (required when role is STAFF)
             
         Returns:
             Tuple of (User instance, tokens dict)
@@ -36,12 +38,26 @@ class AuthService:
         if role not in dict(UserRole.choices):
             raise ValueError(f"Invalid role. Must be one of: {dict(UserRole.choices).keys()}")
         
+        # Validate staff_role if provided
+        if staff_role:
+            if staff_role not in dict(StaffRole.choices):
+                raise ValueError(f"Invalid staff_role. Must be one of: {dict(StaffRole.choices).keys()}")
+        
+        # Validate staff_role is only set when role is STAFF
+        if staff_role and role != UserRole.STAFF:
+            raise ValueError("staff_role can only be set when role is STAFF")
+        
+        # Validate staff_role is required when role is STAFF
+        if role == UserRole.STAFF and not staff_role:
+            raise ValueError("staff_role is required when role is STAFF")
+        
         # Create user
         user = User(
             username=username,
             email=email,
             role=role,
-            phone_number=phone_number
+            phone_number=phone_number,
+            staff_role=staff_role if role == UserRole.STAFF else None
         )
         user.set_password(password)
         
@@ -162,6 +178,10 @@ class AuthService:
             "phone_number": user.phone_number,
             "date_joined": user.date_joined,
         }
+        
+        # Add staff_role if user is staff
+        if user.role == UserRole.STAFF:
+            profile_data["staff_role"] = user.staff_role
         
         # Add verification status for Pro-Contractors (will be implemented later)
         if user.role == UserRole.PRO_CONTRACTOR:

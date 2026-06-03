@@ -75,10 +75,10 @@ export function SearchBar({ value, onChange, placeholder = 'Search...', classNam
 
       {/* Search Tips */}
       {isFocused && !value && (
-        <div className="absolute top-full left-0 right-0 mt-1 p-3 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+        <div className="absolute top-full left-0 right-0 mt-1 p-2 sm:p-3 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
           <div className="text-sm text-gray-600">
-            <div className="font-medium mb-2">Search tips:</div>
-            <ul className="space-y-1 text-xs">
+            <div className="font-medium mb-1 sm:mb-2">Search tips:</div>
+            <ul className="space-y-0.5 sm:space-y-1 text-xs">
               <li>• Type product name or SKU</li>
               <li>• Enter barcode number</li>
               <li>• Use quotes for exact matches</li>

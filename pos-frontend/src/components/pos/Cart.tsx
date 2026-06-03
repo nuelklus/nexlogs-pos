@@ -8,9 +8,10 @@ import { formatCurrency, formatStockQuantity, formatTimestamp, getStockStatusCol
 interface CartProps {
   selectedProduct: Product | null;
   onStockUpdate: (productId: string, newQuantity: number, changeAmount: number) => void;
+  canUpdateStock?: boolean;
 }
 
-export function Cart({ selectedProduct, onStockUpdate }: CartProps) {
+export function Cart({ selectedProduct, onStockUpdate, canUpdateStock = true }: CartProps) {
   const [activeTab, setActiveTab] = useState<'details' | 'history' | 'settings'>('details');
 
   if (!selectedProduct) {
@@ -198,14 +199,16 @@ export function Cart({ selectedProduct, onStockUpdate }: CartProps) {
       </div>
 
       {/* Quick Actions */}
-      <div className="p-4 border-t border-gray-200">
-        <button
-          onClick={() => onStockUpdate(selectedProduct.id, selectedProduct.stock_quantity, 0)}
-          className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          Update Stock
-        </button>
-      </div>
+      {canUpdateStock && (
+        <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={() => onStockUpdate(selectedProduct.id, selectedProduct.stock_quantity, 0)}
+            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Update Stock
+          </button>
+        </div>
+      )}
     </div>
   );
 }

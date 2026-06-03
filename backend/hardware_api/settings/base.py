@@ -91,7 +91,7 @@ DATABASES = {
         "PORT": os.getenv("SUPABASE_DB_PORT", "6543"),
         "OPTIONS": {
             "sslmode": "require",
-            "connect_timeout": 60,
+            "connect_timeout": 120,
         },
         "CONN_MAX_AGE": 300,  # 5 minutes
         "ATOMIC_REQUESTS": True,

@@ -40,10 +40,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-gray-900 text-center">
             Hardware POS Login
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
@@ -71,7 +71,7 @@ export default function LoginPage() {
                 required
                 value={formData.username}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
                 placeholder="Enter your username"
               />
             </div>
@@ -88,7 +88,7 @@ export default function LoginPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
                 placeholder="Enter your password"
               />
             </div>
@@ -103,7 +103,7 @@ export default function LoginPage() {
                 name="store_id"
                 value={formData.store_id}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
               >
                 <option value="main">Main Store</option>
                 <option value="warehouse">Warehouse</option>
@@ -123,7 +123,7 @@ export default function LoginPage() {
                 type="text"
                 value={formData.device_id}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
                 placeholder="Terminal identifier"
               />
               <p className="mt-1 text-xs text-gray-500">
@@ -137,7 +137,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-3 sm:py-2 px-4 border border-transparent text-base sm:text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -145,14 +145,29 @@ export default function LoginPage() {
         </form>
 
         {/* Demo Credentials */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Demo Credentials</h3>
-          <div className="text-xs text-blue-700 space-y-1">
-            <p><strong>Username:</strong> admin</p>
-            <p><strong>Password:</strong> admin123</p>
-            <p><strong>Store:</strong> Main Store</p>
-            <p className="mt-2 text-blue-600">Use these credentials to test the POS system</p>
-          </div>
+        <div className="mt-4 sm:mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+          <details className="sm:block">
+            <summary className="cursor-pointer sm:hidden text-sm font-medium text-blue-900 mb-2">
+              Show Demo Credentials
+            </summary>
+            <div className="text-xs text-blue-700 space-y-1">
+              <h3 className="hidden sm:block text-sm font-medium text-blue-900 mb-2">Demo Credentials</h3>
+              <p><strong>Username:</strong> admin</p>
+              <p><strong>Password:</strong> admin123</p>
+              <p><strong>Store:</strong> Main Store</p>
+              <p className="mt-2 text-blue-600">Use these credentials to test the POS system</p>
+            </div>
+          </details>
+        </div>
+
+        {/* Register Link */}
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Need a staff account?{' '}
+            <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+              Register here
+            </a>
+          </p>
         </div>
       </div>
     </div>

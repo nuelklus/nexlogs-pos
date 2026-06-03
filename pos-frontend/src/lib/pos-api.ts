@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { NEXT_PUBLIC_POS_API_URL, NEXT_PUBLIC_API_TIMEOUT } from './env';
 
 // Types for POS API
 export interface POSAuth {
@@ -139,11 +140,11 @@ class POSApiClient {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_POS_API_URL || 'https://hardware-ecommerce-monorepo.onrender.com/api';
+    this.baseURL = NEXT_PUBLIC_POS_API_URL;
     
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
-      timeout: 10000,
+      timeout: NEXT_PUBLIC_API_TIMEOUT, // Configurable via environment variable
       headers: {
         'Content-Type': 'application/json',
       },
@@ -185,6 +186,17 @@ class POSApiClient {
       async (error) => {
         const originalRequest = error.config;
 
+        // Handle timeout errors - likely token expired
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          console.error('❌ Request timeout - token may be expired');
+          // Check if token is expired
+          if (!this.isAuthenticated()) {
+            console.error('❌ Token expired, forcing logout');
+            this.logout();
+            return Promise.reject(error);
+          }
+        }
+
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
 
@@ -211,7 +223,7 @@ class POSApiClient {
   // Authentication methods
   async authenticate(credentials: POSAuth): Promise<POSAuthResponse> {
     try {
-      const response = await this.axiosInstance.post('/pos/auth/login/', credentials);
+      const response = await this.axiosInstance.post('/auth/login/', credentials);
       const data = response.data;
       
       // Store tokens
@@ -219,6 +231,8 @@ class POSApiClient {
       localStorage.setItem('pos_refresh_token', data.refresh);
       localStorage.setItem('pos_device_id', credentials.device_id);
       localStorage.setItem('pos_store_id', data.store_id || credentials.store_id);
+      // Store user info including staff_role
+      localStorage.setItem('pos_user_info', JSON.stringify(data.user));
       
       return data;
     } catch (error) {
@@ -255,15 +269,67 @@ class POSApiClient {
 
   isAuthenticated(): boolean {
     const token = localStorage.getItem('pos_access_token');
-    if (!token) return false;
+    if (!token) {
+      console.log('❌ No token found in localStorage');
+      return false;
+    }
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
-      return payload.exp > currentTime;
+      const timeUntilExpiry = payload.exp - currentTime;
+      // No buffer - token is valid until it actually expires
+      const isValid = payload.exp > currentTime;
+      
+      console.log(`🔍 Token check: expires in ${Math.floor(timeUntilExpiry)}s, valid: ${isValid}`);
+      
+      return isValid;
     } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      // Clear invalid token
+      localStorage.removeItem('pos_access_token');
+      localStorage.removeItem('pos_refresh_token');
       return false;
     }
+  }
+
+  getUserStaffRole(): string | null {
+    // Try to get staff_role from stored user info first
+    const userInfo = localStorage.getItem('pos_user_info');
+    if (userInfo) {
+      try {
+        const user = JSON.parse(userInfo);
+        return user.staff_role || null;
+      } catch (error) {
+        console.error('❌ Failed to parse user info:', error);
+      }
+    }
+
+    // Fallback to token payload (might not have staff_role)
+    const token = localStorage.getItem('pos_access_token');
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.staff_role || null;
+    } catch (error) {
+      console.error('❌ Failed to get staff role from token:', error);
+      return null;
+    }
+  }
+
+  canUpdateStock(): boolean {
+    const staffRole = this.getUserStaffRole();
+    if (!staffRole) return false;
+    // Cashiers cannot update stock
+    return staffRole !== 'CASHIER';
+  }
+
+  canCreateProduct(): boolean {
+    const staffRole = this.getUserStaffRole();
+    if (!staffRole) return false;
+    // Cashiers cannot create products
+    return staffRole !== 'CASHIER';
   }
 
   // Product methods
@@ -272,13 +338,13 @@ class POSApiClient {
     barcode?: string;
     search?: string;
   }): Promise<{ results: Product[]; count: number; store_id: string }> {
-    const response = await this.axiosInstance.get('/pos/products/', { params });
+    const response = await this.axiosInstance.get('/products/', { params });
     return response.data;
   }
 
   async getProductByBarcode(barcode: string, storeId?: string): Promise<Product | null> {
     try {
-      const response = await this.axiosInstance.get('/pos/products/', {
+      const response = await this.axiosInstance.get('/products/', {
         params: { barcode, store_id: storeId }
       });
       const products = response.data.results;
@@ -290,60 +356,92 @@ class POSApiClient {
   }
 
   async searchProducts(query: string, storeId?: string): Promise<Product[]> {
-    const response = await this.axiosInstance.get('/pos/products/', {
+    const response = await this.axiosInstance.get('/products/', {
       params: { search: query, store_id: storeId }
     });
     return response.data.results;
   }
 
+  async createProduct(productData: any): Promise<Product> {
+    // If productData is FormData, don't set Content-Type header (let browser set it with boundary)
+    const isFormData = productData instanceof FormData;
+    
+    const response = await this.axiosInstance.post('/products/create_product/', productData, {
+      headers: isFormData ? {
+        'Content-Type': 'multipart/form-data',
+      } : undefined,
+    });
+    return response.data;
+  }
+
+  async getCategories(): Promise<any[]> {
+    const response = await this.axiosInstance.get('/categories/');
+    return response.data;
+  }
+
+  async createCategory(categoryData: any): Promise<any> {
+    const response = await this.axiosInstance.post('/categories/', categoryData);
+    return response.data;
+  }
+
+  async getBrands(): Promise<any[]> {
+    const response = await this.axiosInstance.get('/brands/');
+    return response.data;
+  }
+
+  async createBrand(brandData: any): Promise<any> {
+    const response = await this.axiosInstance.post('/brands/', brandData);
+    return response.data;
+  }
+
   // Stock management methods
   async updateStock(request: StockUpdateRequest): Promise<StockUpdateResponse> {
-    const response = await this.axiosInstance.post('/pos/products/update_stock/', request);
+    const response = await this.axiosInstance.post('/products/update_stock/', request);
     return response.data;
   }
 
   async bulkUpdateStock(request: BulkStockUpdateRequest): Promise<BulkStockUpdateResponse> {
-    const response = await this.axiosInstance.post('/pos/products/bulk_stock_update/', request);
+    const response = await this.axiosInstance.post('/products/bulk_stock_update/', request);
     return response.data;
   }
 
   // Sync and monitoring methods
   async getSyncStatus(storeId?: string): Promise<SyncStatusResponse> {
-    const response = await this.axiosInstance.get('/pos/products/sync_status/', {
+    const response = await this.axiosInstance.get('/products/sync_status/', {
       params: { store_id: storeId }
     });
     return response.data;
   }
 
   async getLowStockAlerts(threshold: number = 5, storeId?: string): Promise<LowStockAlertResponse> {
-    const response = await this.axiosInstance.get('/pos/alerts/low-stock/', {
+    const response = await this.axiosInstance.get('/alerts/low-stock/', {
       params: { threshold, store_id: storeId }
     });
     return response.data;
   }
 
   async healthCheck(): Promise<POSHealthResponse> {
-    const response = await this.axiosInstance.get('/pos/health/');
+    const response = await this.axiosInstance.get('/health/');
     return response.data;
   }
 
   async createTransaction(transactionData: any): Promise<any> {
-    const response = await this.axiosInstance.post('/pos/transactions/create/', transactionData);
+    const response = await this.axiosInstance.post('/transactions/create/', transactionData);
     return response.data;
   }
 
   async getTransactionHistory(): Promise<any[]> {
-    const response = await this.axiosInstance.get('/pos/transactions/');
+    const response = await this.axiosInstance.get('/transactions/');
     return response.data;
   }
 
   async getTransactionDetail(transactionId: string): Promise<any> {
-    const response = await this.axiosInstance.get(`/pos/transactions/${transactionId}/`);
+    const response = await this.axiosInstance.get(`/transactions/${transactionId}/`);
     return response.data;
   }
 
   async createRefund(refundData: any): Promise<any> {
-    const response = await this.axiosInstance.post('/pos/refunds/', refundData);
+    const response = await this.axiosInstance.post('/refunds/', refundData);
     return response.data;
   }
 
@@ -357,12 +455,12 @@ class POSApiClient {
   }
 
   getCurrentUser(): string | null {
-    const token = localStorage.getItem('pos_access_token');
-    if (!token) return null;
+    const userInfo = localStorage.getItem('pos_user_info');
+    if (!userInfo) return null;
 
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.username;
+      const user = JSON.parse(userInfo);
+      return user.username;
     } catch (error) {
       return null;
     }

@@ -15,6 +15,12 @@ export function StockAlerts({ storeId }: StockAlertsProps) {
   const [showAlerts, setShowAlerts] = useState(true);
 
   useEffect(() => {
+    // Check authentication before loading alerts
+    if (!posApiClient.isAuthenticated()) {
+      console.log('⚠️ User not authenticated, skipping stock alerts');
+      setLoading(false);
+      return;
+    }
     loadAlerts();
   }, [storeId]);
 
@@ -23,8 +29,13 @@ export function StockAlerts({ storeId }: StockAlertsProps) {
       setLoading(true);
       const response = await posApiClient.getLowStockAlerts(5, storeId);
       setAlerts(response.products);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Failed to load stock alerts:', error);
+      // Check if it's an authentication error
+      if (error.response?.status === 401) {
+        console.error('❌ Authentication failed, clearing alerts');
+        setAlerts([]);
+      }
     } finally {
       setLoading(false);
     }

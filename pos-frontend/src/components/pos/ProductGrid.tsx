@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo, useCallback } from 'react';
 import { Package, Search, AlertTriangle } from 'lucide-react';
 import { type Product } from '@/lib/pos-api';
 import { formatCurrency, formatStockQuantity, getStockStatusColor, getStockStatusText } from '@/lib/utils';
@@ -12,22 +12,23 @@ interface ProductGridProps {
   onProductSelect: (product: Product) => void;
   onStockUpdate: (productId: string, newQuantity: number, changeAmount: number) => void;
   onAddToCart?: (product: Product) => void;
+  canUpdateStock?: boolean;
 }
 
-export function ProductGrid({ products, selectedProduct, onProductSelect, onStockUpdate, onAddToCart }: ProductGridProps) {
+export function ProductGrid({ products, selectedProduct, onProductSelect, onStockUpdate, onAddToCart, canUpdateStock = true }: ProductGridProps) {
   const [showStockModal, setShowStockModal] = useState(false);
   const [stockUpdateProduct, setStockUpdateProduct] = useState<Product | null>(null);
 
-  const handleStockUpdateClick = (product: Product) => {
+  const handleStockUpdateClick = useCallback((product: Product) => {
     setStockUpdateProduct(product);
     setShowStockModal(true);
-  };
+  }, []);
 
-  const handleStockUpdate = (productId: string, newQuantity: number, changeAmount: number) => {
+  const handleStockUpdate = useCallback((productId: string, newQuantity: number, changeAmount: number) => {
     onStockUpdate(productId, newQuantity, changeAmount);
     setShowStockModal(false);
     setStockUpdateProduct(null);
-  };
+  }, [onStockUpdate]);
 
   if (products.length === 0) {
     return (
@@ -41,7 +42,7 @@ export function ProductGrid({ products, selectedProduct, onProductSelect, onStoc
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
         {products.map((product) => {
           const isSelected = selectedProduct?.id === product.id;
           const stockStatus = getStockStatusText(product.stock_quantity);
@@ -56,11 +57,12 @@ export function ProductGrid({ products, selectedProduct, onProductSelect, onStoc
               onClick={() => onProductSelect(product)}
             >
               {/* Product Image */}
-              <div className="relative h-32 bg-gray-100 rounded-t-lg overflow-hidden">
+              <div className="relative h-24 sm:h-32 bg-gray-100 rounded-t-lg overflow-hidden">
                 {product.image_url ? (
                   <img
                     src={product.image_url}
                     alt={product.name}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       // Fallback to placeholder
@@ -87,8 +89,8 @@ export function ProductGrid({ products, selectedProduct, onProductSelect, onStoc
               </div>
 
               {/* Product Info */}
-              <div className="p-4">
-                <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">
+              <div className="p-3 sm:p-4">
+                <h3 className="font-medium text-gray-900 mb-1 line-clamp-2 text-sm sm:text-base">
                   {product.name}
                 </h3>
                 
@@ -119,13 +121,13 @@ export function ProductGrid({ products, selectedProduct, onProductSelect, onStoc
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   {/* Primary Actions Row */}
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onProductSelect(product);
                       }}
-                      className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition-colors ${
+                      className={`flex-1 px-3 py-2 sm:py-2 text-xs sm:text-xs font-medium rounded-md transition-colors ${
                         isSelected
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -140,7 +142,7 @@ export function ProductGrid({ products, selectedProduct, onProductSelect, onStoc
                           e.stopPropagation();
                           onAddToCart(product);
                         }}
-                        className="flex-1 px-3 py-2 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        className="flex-1 px-3 py-2 sm:py-2 text-xs sm:text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                         disabled={product.stock_quantity <= 0}
                       >
                         Add to Cart
@@ -148,16 +150,18 @@ export function ProductGrid({ products, selectedProduct, onProductSelect, onStoc
                     )}
                   </div>
                   
-                  {/* Secondary Action */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStockUpdateClick(product);
-                    }}
-                    className="w-full px-3 py-2 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    Update Stock
-                  </button>
+                  {/* Secondary Action - Update Stock (hidden for cashiers) */}
+                  {canUpdateStock && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStockUpdateClick(product);
+                      }}
+                      className="w-full px-3 py-2 sm:py-2 text-xs sm:text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Update Stock
+                    </button>
+                  )}
                 </div>
 
                 {/* Last Updated Info */}
@@ -186,3 +190,5 @@ export function ProductGrid({ products, selectedProduct, onProductSelect, onStoc
     </>
   );
 }
+
+export default memo(ProductGrid);

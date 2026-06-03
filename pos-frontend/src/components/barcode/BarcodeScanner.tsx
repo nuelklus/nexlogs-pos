@@ -40,9 +40,9 @@ export function BarcodeScanner({ onScan, className = '' }: BarcodeScannerProps) 
   };
 
   return (
-    <div className={`flex items-center space-x-2 ${className}`}>
+    <div className={`flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 ${className}`}>
       {/* Manual Input */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 w-full sm:w-auto">
         <input
           ref={inputRef}
           type="text"
@@ -50,13 +50,13 @@ export function BarcodeScanner({ onScan, className = '' }: BarcodeScannerProps) 
           onChange={(e) => setManualInput(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Scan or enter barcode..."
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="flex-1 px-3 py-2 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           disabled={isScanning}
         />
         <button
           onClick={handleManualScan}
           disabled={!manualInput.trim() || !validateBarcode(manualInput)}
-          className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm whitespace-nowrap"
         >
           Add
         </button>
@@ -65,14 +65,14 @@ export function BarcodeScanner({ onScan, className = '' }: BarcodeScannerProps) 
       {/* Scanner Toggle */}
       <button
         onClick={toggleScanning}
-        className={`p-2 rounded-md transition-colors ${
+        className={`w-full sm:w-auto p-2 rounded-md transition-colors ${
           isScanning
             ? 'bg-green-600 text-white hover:bg-green-700'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
         }`}
         title={isScanning ? 'Stop scanning' : 'Start scanning'}
       >
-        <Barcode className="w-5 h-5" />
+        <Barcode className="w-5 h-5 mx-auto" />
       </button>
 
       {/* Scanning Indicator */}

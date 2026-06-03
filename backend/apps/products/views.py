@@ -478,23 +478,39 @@ def initial_data(request):
         'brands': brand_serializer.data,
     })
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def product_categories(request):
-    """Get all categories with product counts"""
-    categories = Category.objects.filter(is_active=True).annotate(
-        product_count=Count('products', filter=Q(products__is_active=True))
-    ).order_by('name')
-    serializer = CategorySerializer(categories, many=True)
-    return Response(serializer.data)
+    """Get all categories with product counts, or create a new category"""
+    if request.method == 'GET':
+        categories = Category.objects.filter(is_active=True).annotate(
+            product_count=Count('products', filter=Q(products__is_active=True))
+        ).order_by('name')
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def product_brands(request):
-    """Get all brands with product counts"""
-    brands = Brand.objects.filter(is_active=True).annotate(
-        product_count=Count('products', filter=Q(products__is_active=True))
-    ).order_by('name')
-    serializer = BrandSerializer(brands, many=True)
-    return Response(serializer.data)
+    """Get all brands with product counts, or create a new brand"""
+    if request.method == 'GET':
+        brands = Brand.objects.filter(is_active=True).annotate(
+            product_count=Count('products', filter=Q(products__is_active=True))
+        ).order_by('name')
+        serializer = BrandSerializer(brands, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = BrandSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def warehouses(request):

@@ -12,8 +12,10 @@ class CustomUserAdmin(UserAdmin):
                 "fields": (
                     "role",
                     "phone_number",
+                    "staff_role",
                 )
             },
         ),
     )
-    list_display = ("username", "email", "role", "is_staff", "is_active")
+    list_display = ("username", "email", "role", "staff_role", "is_active")
+    list_filter = ("role", "staff_role", "is_active")

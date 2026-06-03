@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
+from apps.products import views as product_views
 
 # Create router for POS endpoints
 router = DefaultRouter()
@@ -14,6 +15,10 @@ urlpatterns = [
     
     # Product-related endpoints
     path('', include(router.urls)),
+    
+    # Categories and brands (reused from products app)
+    path('categories/', product_views.product_categories, name='pos-categories'),
+    path('brands/', product_views.product_brands, name='pos-brands'),
     
     # Health check
     path('health/', views.pos_health_check, name='pos-health-check'),

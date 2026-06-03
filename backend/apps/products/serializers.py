@@ -8,11 +8,59 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'slug', 'description', 'image', 'parent', 'is_active']
+        extra_kwargs = {
+            'slug': {'required': False}
+        }
+    
+    def validate(self, attrs):
+        from django.utils.text import slugify
+        from .models import Category
+        name = attrs.get('name')
+        slug = attrs.get('slug')
+        
+        # Auto-generate slug from name if not provided
+        if name and not slug:
+            base_slug = slugify(name)
+            slug = base_slug
+            counter = 1
+            
+            # Ensure slug is unique
+            while Category.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            attrs['slug'] = slug
+        
+        return attrs
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
         fields = ['id', 'name', 'slug', 'description', 'logo', 'website', 'is_active']
+        extra_kwargs = {
+            'slug': {'required': False}
+        }
+    
+    def validate(self, attrs):
+        from django.utils.text import slugify
+        from .models import Brand
+        name = attrs.get('name')
+        slug = attrs.get('slug')
+        
+        # Auto-generate slug from name if not provided
+        if name and not slug:
+            base_slug = slugify(name)
+            slug = base_slug
+            counter = 1
+            
+            # Ensure slug is unique
+            while Brand.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            attrs['slug'] = slug
+        
+        return attrs
 
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -143,10 +191,35 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             'specifications'
         ]
         extra_kwargs = {
-            'sku': {'required': False, 'read_only': True}  # Make SKU optional and read-only
+            'sku': {'required': False, 'read_only': True},
+            'slug': {'required': False},
+            'description': {'required': False, 'allow_blank': True},
+            'short_description': {'required': False, 'allow_blank': True},
         }
-
+    
     def validate(self, attrs):
+        from django.utils.text import slugify
+        name = attrs.get('name')
+        slug = attrs.get('slug')
+        description = attrs.get('description')
+        
+        # Auto-generate slug from name if not provided
+        if name and not slug:
+            base_slug = slugify(name)
+            slug = base_slug
+            counter = 1
+            
+            # Ensure slug is unique
+            while Product.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            attrs['slug'] = slug
+        
+        # Set default description if not provided
+        if not description:
+            attrs['description'] = name or ''
+        
         print(f"🔍 SERIALIZER VALIDATION")
         print(f"📋 Attributes received: {list(attrs.keys())}")
         

@@ -1,6 +1,6 @@
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
-from apps.accounts.models import UserRole
+from apps.accounts.models import UserRole, StaffRole
 
 User = get_user_model()
 
@@ -15,7 +15,7 @@ class IsPOSCapable(permissions.BasePermission):
             return False
         
         # Admin users have full access
-        if request.user.role == UserRole.ADMIN:
+        if request.user.staff_role == StaffRole.ADMIN:
             return True
         
         # Staff users have POS access
@@ -27,21 +27,29 @@ class IsPOSCapable(permissions.BasePermission):
 
 class CanUpdateStock(permissions.BasePermission):
     """
-    Check if user can update stock (Admin or Staff with stock permissions)
+    Check if user can update stock (Admin, Manager, or Inventory Staff only)
+    Cashiers cannot update stock
     """
     
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Admin users can always update stock
-        if request.user.role == UserRole.ADMIN:
+        # Only staff users can potentially update stock
+        if request.user.role != UserRole.STAFF:
+            return False
+        
+        # Admin and Manager can always update stock
+        if request.user.staff_role in [StaffRole.ADMIN, StaffRole.MANAGER]:
             return True
         
-        # Staff users need explicit stock update permission
-        if request.user.role == UserRole.STAFF:
-            # Check if user has stock_update permission (you can add this to User model)
-            return getattr(request.user, 'can_update_stock', False)
+        # Inventory Staff can update stock
+        if request.user.staff_role == StaffRole.INVENTORY_STAFF:
+            return True
+        
+        # Cashiers cannot update stock
+        if request.user.staff_role == StaffRole.CASHIER:
+            return False
         
         return False
 
@@ -56,7 +64,7 @@ class CanAccessStore(permissions.BasePermission):
             return False
         
         # Admin users can access any store
-        if request.user.role == UserRole.ADMIN:
+        if request.user.staff_role == StaffRole.ADMIN:
             return True
         
         # Check store_id in request
@@ -86,6 +94,35 @@ class IsDeviceAuthenticated(permissions.BasePermission):
         # Verify device is registered (you can add Device model)
         # For now, just check that device_id is provided
         return True
+
+
+class CanCreateProduct(permissions.BasePermission):
+    """
+    Check if user can create products (Admin, Manager, or Inventory Staff only)
+    Cashiers cannot create products
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        # Only staff users can potentially create products
+        if request.user.role != UserRole.STAFF:
+            return False
+        
+        # Admin and Manager can always create products
+        if request.user.staff_role in [StaffRole.ADMIN, StaffRole.MANAGER]:
+            return True
+        
+        # Inventory Staff can create products
+        if request.user.staff_role == StaffRole.INVENTORY_STAFF:
+            return True
+        
+        # Cashiers cannot create products
+        if request.user.staff_role == StaffRole.CASHIER:
+            return False
+        
+        return False
 
 
 class HasValidStoreAccess(permissions.BasePermission):

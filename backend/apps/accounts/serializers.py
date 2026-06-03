@@ -2,7 +2,7 @@ import re
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
-from .models import UserRole
+from .models import UserRole, StaffRole
 
 User = get_user_model()
 
@@ -18,10 +18,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     """Serializer for user registration"""
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
+    staff_role = serializers.CharField(write_only=True, required=False, allow_blank=True)
     
     class Meta:
         model = User
-        fields = ["username", "email", "password", "password_confirm", "role", "phone_number"]
+        fields = ["username", "email", "password", "password_confirm", "role", "phone_number", "staff_role"]
     
     def validate_phone_number(self, value):
         """Format and validate phone number to +233 format"""
@@ -59,15 +60,33 @@ class RegisterSerializer(serializers.ModelSerializer):
             else:
                 raise serializers.ValidationError("Phone number must be at least 10 digits")
     
-    def validate(self, attrs):
-        if attrs["password"] != attrs["password_confirm"]:
-            raise serializers.ValidationError("Passwords don't match")
-        return attrs
-    
     def validate_role(self, value):
         if value not in dict(UserRole.choices):
             raise serializers.ValidationError(f"Invalid role. Must be one of: {dict(UserRole.choices).keys()}")
         return value
+    
+    def validate_staff_role(self, value):
+        """Validate staff_role only when role is STAFF"""
+        if value:
+            if value not in dict(StaffRole.choices):
+                raise serializers.ValidationError(f"Invalid staff_role. Must be one of: {dict(StaffRole.choices).keys()}")
+        return value
+    
+    def validate(self, attrs):
+        if attrs["password"] != attrs["password_confirm"]:
+            raise serializers.ValidationError("Passwords don't match")
+        
+        # Validate staff_role is only set when role is STAFF
+        role = attrs.get("role")
+        staff_role = attrs.get("staff_role")
+        
+        if staff_role and role != UserRole.STAFF:
+            raise serializers.ValidationError("staff_role can only be set when role is STAFF")
+        
+        if role == UserRole.STAFF and not staff_role:
+            raise serializers.ValidationError("staff_role is required when role is STAFF")
+        
+        return attrs
     
     def create(self, validated_data):
         validated_data.pop("password_confirm")
