@@ -180,7 +180,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                   placeholder="Enter product name"
                 />
               </div>
@@ -194,7 +194,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                   name="barcode"
                   value={formData.barcode}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                   placeholder="1234567890123"
                 />
               </div>
@@ -208,7 +208,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                   value={formData.description}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                   placeholder="Enter product description"
                 />
               </div>
@@ -271,7 +271,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                     required
                     min="0"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                     placeholder="0.00"
                   />
                 </div>
@@ -287,7 +287,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                     onChange={handleChange}
                     required
                     min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                     placeholder="0"
                   />
                 </div>
@@ -309,7 +309,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                         type="text"
                         value={newCategory}
                         onChange={(e) => setNewCategory(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                         placeholder="New category name"
                       />
                       <button
@@ -336,7 +336,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                         name="category"
                         value={formData.category}
                         onChange={handleChange}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                       >
                         <option value="">Select category</option>
                         {categories.map((cat) => (
@@ -367,7 +367,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                         type="text"
                         value={newBrand}
                         onChange={(e) => setNewBrand(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                         placeholder="New brand name"
                       />
                       <button
@@ -394,7 +394,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                         name="brand"
                         value={formData.brand}
                         onChange={handleChange}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
                       >
                         <option value="">Select brand</option>
                         {brands.map((brand) => (

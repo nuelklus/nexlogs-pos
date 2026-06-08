@@ -31,6 +31,9 @@ urlpatterns = [
     path('transactions/create/', views.create_transaction, name='pos-create-transaction'),
     path('transactions/<str:transaction_id>/', views.transaction_detail, name='pos-transaction-detail'),
     path('refunds/', views.create_refund, name='pos-create-refund'),
+    
+    # Sales summary
+    path('sales-summary/', views.sales_summary, name='pos-sales-summary'),
 ]
 
 # API documentation

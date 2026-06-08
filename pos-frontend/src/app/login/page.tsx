@@ -71,7 +71,7 @@ export default function LoginPage() {
                 required
                 value={formData.username}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
+                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm text-gray-900"
                 placeholder="Enter your username"
               />
             </div>
@@ -88,7 +88,7 @@ export default function LoginPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
+                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm text-gray-900"
                 placeholder="Enter your password"
               />
             </div>
@@ -103,7 +103,7 @@ export default function LoginPage() {
                 name="store_id"
                 value={formData.store_id}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
+                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm text-gray-900"
               >
                 <option value="main">Main Store</option>
                 <option value="warehouse">Warehouse</option>
@@ -123,7 +123,7 @@ export default function LoginPage() {
                 type="text"
                 value={formData.device_id}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
+                className="mt-1 block w-full px-4 py-3 sm:px-3 sm:py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm text-gray-900"
                 placeholder="Terminal identifier"
               />
               <p className="mt-1 text-xs text-gray-500">

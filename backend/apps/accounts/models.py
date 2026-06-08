@@ -18,6 +18,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=32, choices=UserRole.choices, default=UserRole.CUSTOMER)
     phone_number = models.CharField(max_length=32, unique=True, blank=True, null=True)
     staff_role = models.CharField(max_length=32, choices=StaffRole.choices, blank=True, null=True)
+    store_id = models.CharField(max_length=100, default='main', blank=True, null=True, help_text="Store ID for STAFF users")
 
     def clean(self):
         """Validate that staff_role is only set when role is STAFF"""

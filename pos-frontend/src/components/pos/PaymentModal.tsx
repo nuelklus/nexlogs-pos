@@ -335,7 +335,7 @@ export function PaymentModal({ isOpen, onClose, cartItems, totals }: PaymentModa
                   type="number"
                   value={amountPaid}
                   onChange={(e) => handleAmountPaidChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg text-gray-900"
                   placeholder="Enter amount paid"
                   step="0.01"
                   min="0"

@@ -59,7 +59,7 @@ export function SearchBar({ value, onChange, placeholder = 'Search...', classNam
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyPress}
           placeholder={placeholder}
-          className="flex-1 px-3 py-2 outline-none bg-transparent"
+          className="flex-1 px-3 py-2 outline-none bg-transparent text-gray-900 text-base"
         />
 
         {/* Clear Button */}

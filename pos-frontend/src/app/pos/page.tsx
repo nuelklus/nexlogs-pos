@@ -16,6 +16,7 @@ import { shoppingCart, type CartItem } from '@/lib/cart';
 import { SearchBar } from '@/components/pos/SearchBar';
 import { StockAlerts } from '@/components/pos/StockAlerts';
 import { ProductCreateModal } from '@/components/pos/ProductCreateModal';
+import SalesSummary from '@/components/pos/SalesSummary';
 
 export default function POSPage() {
   const router = useRouter();
@@ -294,6 +295,13 @@ export default function POSPage() {
           {/* Stock Alerts */}
           <StockAlerts storeId={posApiClient.getStoreId()} />
 
+          {/* Sales Summary - only visible to MANAGER and ADMIN */}
+          {posApiClient.canViewSalesSummary() && (
+            <div className="p-2 sm:p-4">
+              <SalesSummary />
+            </div>
+          )}
+
           {/* Product Grid */}
           <div className="flex-1 p-2 sm:p-4 overflow-auto">
             <ProductGrid
@@ -342,16 +350,16 @@ export default function POSPage() {
                 {/* Mobile Collapse/Expand Button */}
                 <button
                   onClick={() => setIsMobilePanelCollapsed(!isMobilePanelCollapsed)}
-                  className="lg:hidden p-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  className="lg:hidden p-3 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors border border-gray-300"
                   aria-label={isMobilePanelCollapsed ? 'Expand panel' : 'Collapse panel'}
                 >
                   {isMobilePanelCollapsed ? (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                     </svg>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
                     </svg>
                   )}
                 </button>

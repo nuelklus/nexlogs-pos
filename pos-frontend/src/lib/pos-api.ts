@@ -332,6 +332,13 @@ class POSApiClient {
     return staffRole !== 'CASHIER';
   }
 
+  canViewSalesSummary(): boolean {
+    const staffRole = this.getUserStaffRole();
+    if (!staffRole) return false;
+    // Only MANAGER and ADMIN can view sales summary
+    return staffRole === 'MANAGER' || staffRole === 'ADMIN';
+  }
+
   // Product methods
   async getProducts(params?: {
     store_id?: string;
@@ -442,6 +449,13 @@ class POSApiClient {
 
   async createRefund(refundData: any): Promise<any> {
     const response = await this.axiosInstance.post('/refunds/', refundData);
+    return response.data;
+  }
+
+  async getSalesSummary(dateRange: string = 'today', storeId?: string): Promise<any> {
+    const response = await this.axiosInstance.get('/sales-summary/', {
+      params: { date_range: dateRange, store_id: storeId }
+    });
     return response.data;
   }
 

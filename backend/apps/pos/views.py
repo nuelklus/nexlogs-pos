@@ -440,6 +440,72 @@ def transaction_history(request):
         )
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def sales_summary(request):
+    """Get sales summary statistics for current store"""
+    try:
+        # Get store_id from query params or fall back to user's store_id or 'main'
+        store_id = request.query_params.get('store_id', request.user.store_id or 'main')
+        
+        # Get date range from query params (default to today)
+        date_range = request.query_params.get('date_range', 'today')
+        
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        
+        if date_range == 'today':
+            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif date_range == 'week':
+            start_date = now - timedelta(days=7)
+        elif date_range == 'month':
+            start_date = now - timedelta(days=30)
+        else:
+            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Filter transactions by store, status, and date range
+        transactions = Transaction.objects.filter(
+            store_id=store_id,
+            status='completed',
+            completed_at__gte=start_date
+        )
+        
+        # Calculate statistics
+        total_sales = transactions.aggregate(
+            total=models.Sum('total_amount')
+        )['total'] or 0
+        
+        transaction_count = transactions.count()
+        
+        # Get average transaction value
+        avg_transaction_value = total_sales / transaction_count if transaction_count > 0 else 0
+        
+        # Get sales by payment method
+        payment_method_breakdown = transactions.values('payment_method').annotate(
+            count=models.Count('id'),
+            total=models.Sum('total_amount')
+        )
+        
+        return Response({
+            'store_id': store_id,
+            'date_range': date_range,
+            'start_date': start_date.isoformat(),
+            'end_date': now.isoformat(),
+            'total_sales': float(total_sales),
+            'transaction_count': transaction_count,
+            'average_transaction_value': float(avg_transaction_value),
+            'payment_method_breakdown': list(payment_method_breakdown)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Failed to fetch sales summary: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_transaction(request):
