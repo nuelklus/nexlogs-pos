@@ -179,8 +179,21 @@ DJANGO_SETTINGS_MODULE=hardware_api.settings.dev
 DJANGO_SECRET_KEY=your-secret-key-here
 DJANGO_DEBUG=True
 
-# Database (Supabase)
-DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+# Database Configuration
+# For Development (Local PostgreSQL)
+LOCAL_DB_NAME=hardware_ecommerce
+LOCAL_DB_USER=postgres
+LOCAL_DB_PASSWORD=your_local_postgres_password
+LOCAL_DB_HOST=localhost
+LOCAL_DB_PORT=5432
+
+# For Production (Supabase)
+DATABASE_URL=postgresql://postgres:your_password@db.your-project-ref.supabase.co:5432/postgres
+SUPABASE_DB_NAME=hardware_ecommerce
+SUPABASE_DB_USER=postgres
+SUPABASE_DB_PASSWORD=your_supabase_password
+SUPABASE_DB_HOST=db.your-project.supabase.co
+SUPABASE_DB_PORT=5432
 
 # Email (Resend)
 EMAIL_HOST=smtp.gmail.com
@@ -192,6 +205,20 @@ EMAIL_HOST_PASSWORD=your-app-password
 # JWT
 JWT_SECRET_KEY=your-jwt-secret-key
 ```
+
+#### Database Configuration
+
+**Development (Local PostgreSQL):**
+- Set `DJANGO_SETTINGS_MODULE=hardware_api.settings.dev`
+- Configure `LOCAL_DB_*` variables in `.env`
+- Uses your local PostgreSQL installation
+- No SSL required for local connections
+
+**Production (Supabase):**
+- Set `DJANGO_SETTINGS_MODULE=hardware_api.settings.prod`
+- Configure `DATABASE_URL` in `.env` or Render environment variables
+- Uses Supabase PostgreSQL
+- SSL required (automatically configured)
 
 #### Frontend (.env.local)
 ```bash

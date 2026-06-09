@@ -81,22 +81,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "hardware_api.wsgi.application"
 ASGI_APPLICATION = "hardware_api.asgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("SUPABASE_DB_NAME"),
-        "USER": os.getenv("SUPABASE_DB_USER"),
-        "PASSWORD": os.getenv("SUPABASE_DB_PASSWORD"),
-        "HOST": os.getenv("SUPABASE_DB_HOST"),
-        "PORT": os.getenv("SUPABASE_DB_PORT", "6543"),
-        "OPTIONS": {
-            "sslmode": "require",
-            "connect_timeout": 120,
-        },
-        "CONN_MAX_AGE": 300,  # 5 minutes
-        "ATOMIC_REQUESTS": True,
-    }
-}
+# Database configuration is now environment-specific
+# See dev.py for local PostgreSQL, prod.py/production.py for Supabase
 
 SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://your-project.supabase.co')
 SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', 'your-anon-key')
