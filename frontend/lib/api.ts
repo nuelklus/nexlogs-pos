@@ -477,7 +477,7 @@ class ApiClient {
         // Handle API request errors
 
         if (error.response) {
-          
+
           const { status, data } = error.response;
           let errorMessage = `API Error: ${status}`;
 
@@ -491,11 +491,24 @@ class ApiClient {
             errorMessage = 'Unauthorized - Authentication required';
           } else if (data?.error) {
             errorMessage = data.error;
+            // Clean up the error message if it contains ErrorDetail wrapper
+            if (errorMessage.includes('ErrorDetail')) {
+              // Extract the actual message from ErrorDetail
+              const match = errorMessage.match(/string="([^"]+)"/);
+              if (match) {
+                errorMessage = match[1].replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
+              }
+            }
           } else if (data?.message) {
             errorMessage = data.message;
           }
 
-          throw new Error(errorMessage);
+          // Create error with response information
+          const apiError = new Error(errorMessage) as any;
+          apiError.response = error.response;
+          apiError.status = status;
+          apiError.data = data;
+          throw apiError;
         } else if (error.request) {
           
           const networkError = new Error('Network error - Unable to connect to the server. Please check your internet connection.');
@@ -548,13 +561,26 @@ class ApiClient {
     categories: Category[];
     brands: Brand[];
   }> {
-    const [featured_products, categories, brands] = await Promise.all([
-      this.getFeaturedProducts(),
-      this.getCategories(),
-      this.getBrands()
-    ]);
-    
-    return { featured_products, categories, brands };
+    console.log('🌐 apiClient.getInitialData - Starting...');
+    console.log('🌐 apiClient.getInitialData - Base URL:', this.axiosInstance.defaults.baseURL);
+
+    try {
+      const [featured_products, categories, brands] = await Promise.all([
+        this.getFeaturedProducts(),
+        this.getCategories(),
+        this.getBrands()
+      ]);
+
+      console.log('✅ apiClient.getInitialData - All data fetched successfully');
+      console.log('✅ apiClient.getInitialData - Featured products:', featured_products.length);
+      console.log('✅ apiClient.getInitialData - Categories:', categories.length);
+      console.log('✅ apiClient.getInitialData - Brands:', brands.length);
+
+      return { featured_products, categories, brands };
+    } catch (error) {
+      console.error('❌ apiClient.getInitialData - Error:', error);
+      throw error;
+    }
   }
 
   async getProducts(filters: SearchFilters = {}, options: { skipCache?: boolean } = {}): Promise<ProductsResponse> {
@@ -590,8 +616,17 @@ class ApiClient {
   }
 
   async getFeaturedProducts(): Promise<Product[]> {
-    const result = await this.request<Product[]>('/products/featured/');
-    return result;
+    console.log('🌐 apiClient.getFeaturedProducts - Starting...');
+    console.log('🌐 apiClient.getFeaturedProducts - Endpoint: /products/featured/');
+
+    try {
+      const result = await this.request<Product[]>('/products/featured/');
+      console.log('✅ apiClient.getFeaturedProducts - Success:', result.length, 'products');
+      return result;
+    } catch (error) {
+      console.error('❌ apiClient.getFeaturedProducts - Error:', error);
+      throw error;
+    }
   }
 
   async getSearchSuggestions(query: string): Promise<{

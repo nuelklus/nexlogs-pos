@@ -479,7 +479,6 @@ def initial_data(request):
     })
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
 def product_categories(request):
     """Get all categories with product counts, or create a new category"""
     if request.method == 'GET':
@@ -489,6 +488,8 @@ def product_categories(request):
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
         serializer = CategorySerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -496,7 +497,6 @@ def product_categories(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
 def product_brands(request):
     """Get all brands with product counts, or create a new brand"""
     if request.method == 'GET':
@@ -506,6 +506,8 @@ def product_brands(request):
         serializer = BrandSerializer(brands, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
         serializer = BrandSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

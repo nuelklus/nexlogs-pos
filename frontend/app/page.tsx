@@ -77,6 +77,11 @@ export default function HomePage() {
   const { addToCart } = useCart();
   const [retryCount, setRetryCount] = useState(0);
 
+  // Debug logging
+  console.log('🏠 HomePage - useInitialData state:', { loading, error, data });
+  console.log('🏠 HomePage - Featured products count:', data?.featured_products?.length);
+  console.log('🏠 HomePage - API URL:', process.env.NEXT_PUBLIC_API_URL);
+
   const handleQuickAdd = useCallback((productId: string, quantity: number) => {
     console.log(`Adding ${quantity} of product ${productId} to cart`);
     

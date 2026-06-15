@@ -174,7 +174,38 @@ export default function CheckoutPage() {
       
     } catch (error: any) {
       console.error('Order creation failed:', error);
-      setError(error.message || 'Failed to create order. Please try again.');
+      console.error('Error structure:', {
+        message: error.message,
+        response: error.response,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data,
+        status: error.status,
+        data: error.data
+      });
+
+      // Handle different error types
+      let errorMessage = 'Failed to create order. Please try again.';
+
+      if (error.response?.status === 400) {
+        // Validation error (e.g., insufficient inventory)
+        errorMessage = error.response.data?.error || error.message || 'Invalid order data. Please check your cart.';
+        console.log('🔍 400 Error message extracted:', errorMessage);
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.status === 400) {
+        // Fallback for error object with status property
+        errorMessage = error.data?.error || error.message || 'Invalid order data. Please check your cart.';
+        console.log('🔍 400 Error message extracted (fallback):', errorMessage);
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      console.log('🔍 Final error message to display:', errorMessage);
+
+      // Convert escaped \n to actual newlines for display
+      errorMessage = errorMessage.replace(/\\n/g, '\n').replace(/\n/g, '<br />');
+
+      setError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -565,9 +596,9 @@ export default function CheckoutPage() {
                 {}
                 {error && (
                   <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center">
-                      <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-                      <span className="text-red-800 font-medium">{error}</span>
+                    <div className="flex items-start">
+                      <AlertCircle className="h-5 w-5 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-red-800 font-medium" dangerouslySetInnerHTML={{ __html: error }} />
                     </div>
                   </div>
                 )}

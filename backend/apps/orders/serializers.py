@@ -66,7 +66,7 @@ class CreateOrderSerializer(serializers.ModelSerializer):
         Create order with automatic inventory reduction
         """
         print(f"🛒 Creating order with inventory management...")
-        
+
         # Check inventory availability before creating order
         items_data = validated_data.get('items', [])
         try:
@@ -75,9 +75,20 @@ class CreateOrderSerializer(serializers.ModelSerializer):
         except serializers.ValidationError as e:
             print(f"❌ Inventory check failed: {e}")
             raise e
-        
+        except Exception as e:
+            import traceback
+            print(f"❌ Unexpected error during inventory check: {e}")
+            print(f"❌ Traceback: {traceback.format_exc()}")
+            # Pass the original error message directly without wrapping
+            raise serializers.ValidationError(str(e))
+
         # Create order with inventory reduction
-        order = OrderService.create_order_with_inventory_reduction(validated_data)
-        
-        print(f"✅ Order {order.order_number} created successfully with inventory reduction")
-        return order
+        try:
+            order = OrderService.create_order_with_inventory_reduction(validated_data)
+            print(f"✅ Order {order.order_number} created successfully with inventory reduction")
+            return order
+        except Exception as e:
+            import traceback
+            print(f"❌ Order creation failed: {e}")
+            print(f"❌ Traceback: {traceback.format_exc()}")
+            raise serializers.ValidationError(f"Order creation error: {str(e)}")

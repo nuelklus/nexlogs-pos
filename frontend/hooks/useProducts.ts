@@ -373,17 +373,28 @@ export function useInitialData() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchInitialData = useCallback(async () => {
+    console.log('🔄 useInitialData - Starting fetch...');
+    console.log('🔄 useInitialData - API URL:', process.env.NEXT_PUBLIC_API_URL);
     setLoading(true);
     setError(null);
-    
+
     try {
+      console.log('🔄 useInitialData - Calling apiClient.getInitialData()...');
       const initialData = await apiClient.getInitialData();
+      console.log('✅ useInitialData - API response received:', initialData);
+      console.log('✅ useInitialData - Featured products count:', initialData.featured_products?.length);
+      console.log('✅ useInitialData - Featured products data:', initialData.featured_products);
       setData(initialData);
       console.log('✅ Real API data loaded:', initialData.featured_products.length, 'products');
     } catch (err) {
-      console.warn('Failed to fetch initial data:', err);
+      console.error('❌ useInitialData - Failed to fetch initial data:', err);
+      console.error('❌ useInitialData - Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+      });
       setError(err instanceof Error ? err.message : 'Failed to fetch initial data');
     } finally {
+      console.log('🔄 useInitialData - Fetch completed, loading:', false);
       setLoading(false);
     }
   }, []);

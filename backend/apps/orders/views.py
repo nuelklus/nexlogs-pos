@@ -1,4 +1,4 @@
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.core.mail import send_mail
@@ -21,42 +21,75 @@ class CreateOrderView(generics.CreateAPIView):
         print(f"Request data: {request.data}")
         print(f"Request headers: {dict(request.headers)}")
         print(f"Authenticated user: {request.user if request.user.is_authenticated else 'Anonymous'}")
-        
-        serializer = self.get_serializer(data=request.data)
-        print(f"Serializer valid: {serializer.is_valid()}")
-        if not serializer.is_valid():
-            print(f"Serializer errors: {serializer.errors}")
-            raise serializers.ValidationError(serializer.errors)
-        
-        # Associate order with authenticated user if available
-        validated_data = serializer.validated_data
-        if request.user.is_authenticated:
-            validated_data['user'] = request.user
-            print(f"Associating order with user: {request.user.username}")
-        
-        print(f"Creating order with validated data: {validated_data}")
-        order = serializer.save(**validated_data)
-        print(f"Order created successfully: {order.order_number}")
-        
-        # Send emails
+
         try:
-            self.send_order_emails(order)
-            print(f"✅ Emails sent successfully for order {order.order_number}")
+            serializer = self.get_serializer(data=request.data)
+            print(f"Serializer valid: {serializer.is_valid()}")
+            if not serializer.is_valid():
+                print(f"Serializer errors: {serializer.errors}")
+                raise serializers.ValidationError(serializer.errors)
+
+            # Associate order with authenticated user if available
+            validated_data = serializer.validated_data
+            if request.user.is_authenticated:
+                validated_data['user'] = request.user
+                print(f"Associating order with user: {request.user.username}")
+
+            print(f"Creating order with validated data: {validated_data}")
+            order = serializer.save(**validated_data)
+            print(f"Order created successfully: {order.order_number}")
+
+            # Send emails
+            try:
+                self.send_order_emails(order)
+                print(f"✅ Emails sent successfully for order {order.order_number}")
+            except Exception as e:
+                # Log error but don't fail the order creation
+                import traceback
+                print(f"❌ Failed to send emails for order {order.order_number}: {e}")
+                print(f"❌ Email configuration: HOST={settings.EMAIL_HOST}, PORT={settings.EMAIL_PORT}, USER={settings.EMAIL_HOST_USER}")
+                print(f"❌ Full traceback: {traceback.format_exc()}")
+
+            # Generate release code for COD orders
+            if order.payment_method == 'cod' and not order.release_code:
+                order.release_code = ''.join(random.choices(string.digits, k=6))
+                order.save()
+
+            # Return the created order
+            response_serializer = OrderSerializer(order)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+        except serializers.ValidationError as e:
+            # Handle validation errors (like insufficient inventory) with proper 400 status
+            print(f"❌ Validation error: {e}")
+            # Extract the error message from DRF ValidationError
+            if hasattr(e, 'detail') and e.detail:
+                # e.detail is usually a list of ErrorDetail objects
+                if isinstance(e.detail, list):
+                    # Join multiple error messages with newlines
+                    error_message = '\n'.join(str(detail) for detail in e.detail)
+                else:
+                    error_message = str(e.detail)
+            else:
+                error_message = str(e)
+
+            # Clean up the error message - remove list brackets if present
+            error_message = error_message.strip("[]'\"")
+
+            return Response(
+                {'error': error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
-            # Log error but don't fail the order creation
             import traceback
-            print(f"❌ Failed to send emails for order {order.order_number}: {e}")
-            print(f"❌ Email configuration: HOST={settings.EMAIL_HOST}, PORT={settings.EMAIL_PORT}, USER={settings.EMAIL_HOST_USER}")
-            print(f"❌ Full traceback: {traceback.format_exc()}")
-        
-        # Generate release code for COD orders
-        if order.payment_method == 'cod' and not order.release_code:
-            order.release_code = ''.join(random.choices(string.digits, k=6))
-            order.save()
-        
-        # Return the created order
-        response_serializer = OrderSerializer(order)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            print(f"❌ ORDER CREATION FAILED: {e}")
+            print(f"❌ Error type: {type(e).__name__}")
+            print(f"❌ Full traceback:")
+            print(traceback.format_exc())
+            return Response(
+                {'error': 'An unexpected error occurred. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     def send_order_emails(self, order):
         """Send order confirmation emails using Resend API"""
