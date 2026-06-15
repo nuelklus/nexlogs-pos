@@ -15,7 +15,7 @@ export interface CartTotals {
 
 export class ShoppingCart {
   private items: CartItem[] = [];
-  private taxRate: number = 0.12; // 12% tax rate
+  private taxRate: number = 0; // 0% tax rate
 
   // Add item to cart
   addItem(product: Product, quantity: number = 1): void {

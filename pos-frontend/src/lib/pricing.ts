@@ -7,7 +7,7 @@ export interface TaxConfig {
 }
 
 export class PricingCalculator {
-  private static defaultTaxRate: number = 0.12; // 12% default tax
+  private static defaultTaxRate: number = 0; // 0% tax
 
   // Calculate subtotal from cart items
   static calculateSubtotal(items: CartItem[]): number {
@@ -105,10 +105,10 @@ export class PricingCalculator {
 
 // Tax configurations for different regions
 export const taxConfigs: { [key: string]: TaxConfig } = {
-  'Ghana': { rate: 0.12, name: 'VAT', enabled: true },
+  'Ghana': { rate: 0, name: 'VAT', enabled: true },
   'Nigeria': { rate: 0.075, name: 'VAT', enabled: true },
   'Kenya': { rate: 0.16, name: 'VAT', enabled: true },
-  'Default': { rate: 0.12, name: 'Tax', enabled: true }
+  'Default': { rate: 0, name: 'Tax', enabled: true }
 };
 
 // Get tax config by country

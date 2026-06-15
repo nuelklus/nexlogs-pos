@@ -186,7 +186,7 @@ export function PaymentModal({ isOpen, onClose, cartItems, totals }: PaymentModa
         <div class="separator"></div>
 
         <div class="footer">
-          <p>Thank You For Shopping With Us</p>
+          <p>Thank You For Trusting Us</p>
         </div>
         <div class="double-separator"></div>
       </body>
