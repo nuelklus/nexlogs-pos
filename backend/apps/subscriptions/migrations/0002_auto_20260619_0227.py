@@ -71,7 +71,6 @@ def create_plans_and_legacy_organization(apps, schema_editor):
     legacy_org = Organization.objects.create(
         business_name='Legacy Organization',
         current_plan=starter_plan,
-        pricing_type='monthly',
         subscription_status='active',
         expiry_date=expiry_date,
         max_users=starter_plan.max_users
