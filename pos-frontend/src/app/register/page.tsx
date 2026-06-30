@@ -41,7 +41,6 @@ export default function RegisterPage() {
   useEffect(() => {
     const token = localStorage.getItem('pos_access_token');
     const userInfo = localStorage.getItem('pos_user_info');
-    console.log('userInfo',userInfo)
     if (!token || !userInfo) {
       router.push('/login');
       return;
