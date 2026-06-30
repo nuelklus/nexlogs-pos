@@ -13,9 +13,23 @@ class CustomUserAdmin(UserAdmin):
                     "role",
                     "phone_number",
                     "staff_role",
+                    "organization",
                 )
             },
         ),
     )
-    list_display = ("username", "email", "role", "staff_role", "is_active")
-    list_filter = ("role", "staff_role", "is_active")
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        (
+            "Hardware E-commerce",
+            {
+                "fields": (
+                    "role",
+                    "phone_number",
+                    "staff_role",
+                    "organization",
+                )
+            },
+        ),
+    )
+    list_display = ("username", "email", "role", "staff_role", "organization", "is_active")
+    list_filter = ("role", "staff_role", "organization", "is_active")

@@ -16,7 +16,7 @@ class AuthService:
     @transaction.atomic
     def register_user(*, username: str, password: str, email: str = "", 
                      role: str = "CUSTOMER", phone_number: str = "", 
-                     staff_role: str = "") -> Tuple[User, Dict[str, str]]:
+                     staff_role: str = "", organization=None) -> Tuple[User, Dict[str, str]]:
         """
         Register a new user with optional Pro-Contractor or Staff role
         
@@ -57,7 +57,8 @@ class AuthService:
             email=email,
             role=role,
             phone_number=phone_number,
-            staff_role=staff_role if role == UserRole.STAFF else None
+            staff_role=staff_role if role == UserRole.STAFF else None,
+            organization=organization
         )
         user.set_password(password)
         
@@ -109,6 +110,16 @@ class AuthService:
         
         if not user.is_active:
             raise ValueError("Account is disabled")
+        
+        # Check subscription status for users with organization
+        # Refresh from DB to ensure organization is loaded
+        user = User.objects.select_related('organization').get(pk=user.pk)
+        if user.organization and not user.organization.is_subscription_active():
+            raise ValueError(
+                f"Organization subscription has expired. "
+                f"Status: {user.organization.subscription_status}, "
+                f"Expiry date: {user.organization.expiry_date}"
+            )
         
         # Generate tokens
         tokens = AuthService.generate_tokens(user)

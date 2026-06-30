@@ -45,6 +45,13 @@ export interface Product {
   };
   image_url?: string;
   is_active: boolean;
+  expiry_date?: string;
+  expiry_status?: {
+    status: string;
+    message: string;
+    days_remaining?: number;
+    days_overdue?: number;
+  };
 }
 
 export interface StockUpdateRequest {
@@ -135,6 +142,30 @@ export interface POSHealthResponse {
   version: string;
 }
 
+export interface SubscriptionInfo {
+  plan: string;
+  pricing_type: string;
+  plan_features: {
+    max_users: number;
+    multi_branch: boolean;
+    barcode_scanning: boolean;
+    supplier_management: boolean;
+    stock_adjustments: boolean;
+    low_stock_alerts: boolean;
+    profit_loss_reports: boolean;
+    audit_logs: boolean;
+    api_access: boolean;
+    role_based_access: boolean;
+  };
+  subscription_status: string;
+  expiry_date: string;
+  is_active: boolean;
+  is_expiry_warning: boolean;
+  max_users: number;
+  current_users: number;
+  can_add_user: boolean;
+}
+
 class POSApiClient {
   private axiosInstance: AxiosInstance;
   private baseURL: string;
@@ -214,6 +245,12 @@ class POSApiClient {
           }
         }
 
+        // Suppress 403 errors for restricted features (backend still logs them)
+        if (error.response?.status === 403) {
+          console.log('⚠️ Feature not available in current plan (403)');
+          return Promise.reject(error);
+        }
+
         console.error('❌ POS API Response Error:', error.response?.data || error.message);
         return Promise.reject(error);
       }
@@ -225,7 +262,7 @@ class POSApiClient {
     try {
       const response = await this.axiosInstance.post('/auth/login/', credentials);
       const data = response.data;
-      
+      console.log('data', data)
       // Store tokens
       localStorage.setItem('pos_access_token', data.access);
       localStorage.setItem('pos_refresh_token', data.refresh);
@@ -381,6 +418,11 @@ class POSApiClient {
     return response.data;
   }
 
+  async updateProduct(productId: string, productData: any): Promise<Product> {
+    const response = await this.axiosInstance.patch(`/products/${productId}/`, productData);
+    return response.data;
+  }
+
   async getCategories(): Promise<any[]> {
     const response = await this.axiosInstance.get('/categories/');
     return response.data;
@@ -427,6 +469,13 @@ class POSApiClient {
     return response.data;
   }
 
+  async getExpiryAlerts(months: number = 3, storeId?: string): Promise<{ products: Product[]; count: number; threshold_date: string }> {
+    const response = await this.axiosInstance.get('/alerts/expiry/', {
+      params: { months, store_id: storeId }
+    });
+    return response.data;
+  }
+
   async healthCheck(): Promise<POSHealthResponse> {
     const response = await this.axiosInstance.get('/health/');
     return response.data;
@@ -444,6 +493,24 @@ class POSApiClient {
 
   async getTransactionDetail(transactionId: string): Promise<any> {
     const response = await this.axiosInstance.get(`/transactions/${transactionId}/`);
+    return response.data;
+  }
+
+  // Subscription methods
+  async getSubscriptionInfo(): Promise<SubscriptionInfo> {
+    const response = await this.axiosInstance.get('/subscriptions/subscription/');
+    return response.data;
+  }
+
+  async checkFeatureAccess(featureName: string): Promise<{ available: boolean; current_plan: string }> {
+    const response = await this.axiosInstance.get('/subscriptions/subscription/check_feature/', {
+      params: { feature: featureName }
+    });
+    return response.data;
+  }
+
+  async getAvailableFeatures(): Promise<any> {
+    const response = await this.axiosInstance.get('/subscriptions/subscription/features/');
     return response.data;
   }
 

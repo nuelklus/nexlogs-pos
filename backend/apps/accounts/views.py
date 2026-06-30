@@ -12,12 +12,26 @@ from .serializers import (
     LogoutSerializer
 )
 from .services import AuthService
+from .models import StaffRole
 
 User = get_user_model()
 
+
+class IsAdminUser(permissions.BasePermission):
+    """Custom permission: only allow users with staff_role == ADMIN to access."""
+    message = "Only admin users can register new staff members."
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, 'staff_role', None) == StaffRole.ADMIN
+        )
+
+
 class RegisterView(APIView):
-    """User registration endpoint"""
-    permission_classes = [permissions.AllowAny]
+    """User registration endpoint - restricted to admin users only"""
+    permission_classes = [IsAdminUser]
     
     def post(self, request):
         print(f"🔍 DEBUG: Received registration data: {request.data}")
@@ -28,7 +42,10 @@ class RegisterView(APIView):
                 validated_data = serializer.validated_data.copy()
                 validated_data.pop('password_confirm', None)
                 
-                user, tokens = AuthService.register_user(**validated_data)
+                user, tokens = AuthService.register_user(
+                    organization=request.user.organization, 
+                    **validated_data
+                    )
                 return Response({
                     "user": UserSerializer(user).data,
                     "tokens": tokens,
@@ -57,6 +74,9 @@ class LoginView(APIView):
             try:
                 user, tokens = AuthService.login_user(**serializer.validated_data)
                 print(f"LOGIN DEBUG: Login successful for user: {user.username}")
+                print("User organization:", user.organization)
+                print("User organization_id:", user.organization_id)
+                print("Serialized user:", UserSerializer(user).data)
                 return Response({
                     "user": UserSerializer(user).data,
                     "tokens": tokens,

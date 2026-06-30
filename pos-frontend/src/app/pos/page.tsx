@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { posApiClient, type Product } from '@/lib/pos-api';
+import { posApiClient, type Product, type SubscriptionInfo as SubscriptionInfoType } from '@/lib/pos-api';
 // WebSocket imports removed - single terminal mode
 import { formatCurrency, formatStockQuantity, getStockStatusColor, getStockStatusText } from '@/lib/utils';
 import { BarcodeScanner } from '@/components/barcode/BarcodeScanner';
@@ -15,8 +15,10 @@ import { shoppingCart, type CartItem } from '@/lib/cart';
 // ConnectionStatus removed - single terminal mode
 import { SearchBar } from '@/components/pos/SearchBar';
 import { StockAlerts } from '@/components/pos/StockAlerts';
+import { ExpiryAlerts } from '@/components/pos/ExpiryAlerts';
 import { ProductCreateModal } from '@/components/pos/ProductCreateModal';
 import SalesSummary from '@/components/pos/SalesSummary';
+import { SubscriptionInfo } from '@/components/pos/SubscriptionInfo';
 
 export default function POSPage() {
   const router = useRouter();
@@ -31,6 +33,9 @@ export default function POSPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showProductCreateModal, setShowProductCreateModal] = useState(false);
   const [isMobilePanelCollapsed, setIsMobilePanelCollapsed] = useState(false);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfoType | null>(null);
+  const [showSubscriptionInfo, setShowSubscriptionInfo] = useState(false);
+  const [salesSummaryKey, setSalesSummaryKey] = useState(0);
   // ConnectionStatus removed - single terminal mode
   useEffect(() => {
     // Check authentication
@@ -55,10 +60,9 @@ export default function POSPage() {
       // Load stock alerts
       await loadStockAlerts();
       
-      // WebSocket disabled - running in offline mode
-      console.log('✅ POS System Ready - Single Terminal Mode');
-      console.log('📦 All features available: product management, stock updates, search');
-      console.log('🔄 Real-time sync disabled for single terminal use');
+      // Fetch subscription info
+      await fetchSubscriptionInfo();
+
       
     } catch (error) {
       console.error('❌ Failed to initialize POS:', error);
@@ -94,6 +98,11 @@ export default function POSPage() {
       const alerts = await posApiClient.getLowStockAlerts(5, posApiClient.getStoreId());
       console.log('📊 Stock alerts:', alerts);
     } catch (error: any) {
+      // Suppress 403 errors for restricted features (backend still logs them)
+      if (error.response?.status === 403) {
+        console.log('⚠️ Feature not available in current plan (403)');
+        return;
+      }
       console.error('❌ Failed to load stock alerts:', error);
       // Only redirect on actual 401 authentication errors, not aborted requests
       if (error.response?.status === 401) {
@@ -105,6 +114,16 @@ export default function POSPage() {
       if (error.code === 'ECONNABORTED' || error.message?.includes('aborted')) {
         console.log('⚠️ Request aborted (likely due to component unmounting)');
       }
+    }
+  };
+
+  const fetchSubscriptionInfo = async () => {
+    try {
+      const info = await posApiClient.getSubscriptionInfo();
+      setSubscriptionInfo(info);
+      console.log('📋 Subscription info loaded:', info);
+    } catch (error) {
+      console.error('❌ Failed to fetch subscription info:', error);
     }
   };
 
@@ -125,6 +144,14 @@ export default function POSPage() {
     console.log('🔍 Setting showPaymentModal to true');
     setShowPaymentModal(true);
     console.log('🔍 showPaymentModal state should now be true');
+  }, []);
+
+  const handlePaymentComplete = useCallback(async () => {
+    console.log('💳 Payment completed, refreshing products, alerts, and sales summary');
+    await loadProducts();
+    await loadStockAlerts();
+    setSalesSummaryKey(prev => prev + 1);
+    setCartItems([]);
   }, []);
 
   const handleBarcodeScan = useCallback(async (barcode: string) => {
@@ -182,7 +209,19 @@ export default function POSPage() {
 
       console.log('✅ Stock update successful:', response);
 
-      // The WebSocket will update the local state automatically
+      // Real-time sync is disabled in single-terminal mode, so update local state immediately
+      const updatedFields = (p: Product): Product => ({
+        ...p,
+        stock_quantity: newQuantity,
+        stock_sync_version: response?.sync_version ?? (p.stock_sync_version || 0) + 1,
+        stock_update_source: 'pos',
+        stock_updated_by: posApiClient.getCurrentUser() ?? p.stock_updated_by,
+        last_pos_sync: response?.timestamp ?? new Date().toISOString(),
+      });
+
+      setProducts(prev => prev.map(p => (p.id === productId ? updatedFields(p) : p)));
+      setFilteredProducts(prev => prev.map(p => (p.id === productId ? updatedFields(p) : p)));
+      setSelectedProduct(prev => (prev && prev.id === productId ? updatedFields(prev) : prev));
 
     } catch (error) {
       console.error('❌ Failed to update stock:', error);
@@ -244,7 +283,7 @@ export default function POSPage() {
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text'
               }}>
-                GEE GEES
+                LOGO
               </h1>
               <div className="text-xs sm:text-sm text-gray-500">
                 Store: {posApiClient.getStoreId()} | User: {posApiClient.getCurrentUser()}
@@ -255,12 +294,26 @@ export default function POSPage() {
                 Single Terminal Mode
               </div>
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowSubscriptionInfo(true)}
+                  className="px-2 sm:px-3 py-1 sm:py-1 text-xs sm:text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+                >
+                  View Subscription
+                </button>
                 {posApiClient.canCreateProduct() && (
                   <button
                     onClick={() => setShowProductCreateModal(true)}
                     className="px-2 sm:px-3 py-1 sm:py-1 text-xs sm:text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     + Create Product
+                  </button>
+                )}
+                {posApiClient.getUserStaffRole() === 'ADMIN' && (
+                  <button
+                    onClick={() => router.push('/register')}
+                    className="px-2 sm:px-3 py-1 sm:py-1 text-xs sm:text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  >
+                    + Register Staff
                   </button>
                 )}
                 <button
@@ -295,10 +348,13 @@ export default function POSPage() {
           {/* Stock Alerts */}
           <StockAlerts storeId={posApiClient.getStoreId()} />
 
+          {/* Expiry Alerts */}
+          <ExpiryAlerts storeId={posApiClient.getStoreId()} />
+
           {/* Sales Summary - only visible to MANAGER and ADMIN */}
           {posApiClient.canViewSalesSummary() && (
             <div className="p-2 sm:p-4">
-              <SalesSummary />
+              <SalesSummary refreshKey={salesSummaryKey} />
             </div>
           )}
 
@@ -316,7 +372,7 @@ export default function POSPage() {
         </div>
 
         {/* Right Panel - Shopping Cart */}
-        <div className={`fixed inset-x-0 bottom-0 lg:static lg:inset-auto lg:w-96 bg-white border-t lg:border-l border-gray-200 flex flex-col z-50 transition-all duration-300 ease-in-out ${isMobilePanelCollapsed ? 'h-16' : 'h-[70vh]'} lg:h-screen`}>
+        <div className={`fixed inset-x-0 bottom-0 lg:sticky lg:top-16 lg:inset-auto lg:w-96 bg-white border-t lg:border-l border-gray-200 flex flex-col z-50 transition-all duration-300 ease-in-out ${isMobilePanelCollapsed ? 'h-16' : 'h-[70vh]'} lg:h-[calc(100vh-4rem)]`}>
           {/* Mobile Handle for Drag Gesture */}
           <div className="lg:hidden flex justify-center py-2 border-b border-gray-200">
             <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
@@ -529,6 +585,7 @@ export default function POSPage() {
           onClose={() => setShowPaymentModal(false)}
           cartItems={cartItems}
           totals={shoppingCart.getTotals()}
+          onPaymentComplete={handlePaymentComplete}
         />
       )}
 
@@ -537,6 +594,14 @@ export default function POSPage() {
         <ProductCreateModal
           onClose={() => setShowProductCreateModal(false)}
           onSuccess={handleProductCreateSuccess}
+        />
+      )}
+
+      {/* Subscription Info Modal */}
+      {showSubscriptionInfo && subscriptionInfo && (
+        <SubscriptionInfo 
+          subscription={subscriptionInfo} 
+          onClose={() => setShowSubscriptionInfo(false)} 
         />
       )}
     </div>

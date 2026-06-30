@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AlertTriangle, X, TrendingDown } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, TrendingDown } from 'lucide-react';
 import { posApiClient, type LowStockAlert } from '@/lib/pos-api';
 import { formatCurrency, formatStockQuantity } from '@/lib/utils';
 
@@ -12,7 +12,7 @@ interface StockAlertsProps {
 export function StockAlerts({ storeId }: StockAlertsProps) {
   const [alerts, setAlerts] = useState<LowStockAlert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAlerts, setShowAlerts] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     // Check authentication before loading alerts
@@ -30,6 +30,12 @@ export function StockAlerts({ storeId }: StockAlertsProps) {
       const response = await posApiClient.getLowStockAlerts(5, storeId);
       setAlerts(response.products);
     } catch (error: any) {
+      // Suppress 403 errors for restricted features (backend still logs them)
+      if (error.response?.status === 403) {
+        console.log('⚠️ Feature not available in current plan (403)');
+        setAlerts([]);
+        return;
+      }
       console.error('❌ Failed to load stock alerts:', error);
       // Check if it's an authentication error
       if (error.response?.status === 401) {
@@ -70,15 +76,19 @@ export function StockAlerts({ storeId }: StockAlertsProps) {
           </h3>
         </div>
         <button
-          onClick={() => setShowAlerts(!showAlerts)}
+          onClick={() => setIsExpanded(!isExpanded)}
           className="p-1 hover:bg-gray-100 rounded-full transition-colors"
         >
-          <X className="w-4 h-4 text-gray-500" />
+          {isExpanded ? (
+            <ChevronUp className="w-4 h-4 text-gray-500" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-500" />
+          )}
         </button>
       </div>
 
       {/* Alert Items */}
-      {showAlerts && (
+      {isExpanded && (
         <div className="px-4 pb-4">
           <div className="space-y-2">
             {alerts.map((alert) => (

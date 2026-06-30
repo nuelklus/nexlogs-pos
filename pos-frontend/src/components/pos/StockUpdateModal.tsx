@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Plus, Minus, TrendingUp, TrendingDown } from 'lucide-react';
 import { type Product } from '@/lib/pos-api';
+import { posApiClient } from '@/lib/pos-api';
 import { formatCurrency, formatStockQuantity, getChangeAmountColor, getChangeAmountText } from '@/lib/utils';
 
 interface StockUpdateModalProps {
@@ -15,9 +16,12 @@ export function StockUpdateModal({ product, onUpdate, onClose }: StockUpdateModa
   const [newQuantity, setNewQuantity] = useState(product.stock_quantity);
   const [adjustment, setAdjustment] = useState(0);
   const [updateReason, setUpdateReason] = useState('');
+  const [expiryDate, setExpiryDate] = useState(product.expiry_date || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const changeAmount = newQuantity - product.stock_quantity;
+  const hasExpiryDateChanged = expiryDate !== (product.expiry_date || '');
+  const hasChanges = changeAmount !== 0 || hasExpiryDateChanged;
 
   const handleQuantityChange = (delta: number) => {
     const newQty = Math.max(0, newQuantity + delta);
@@ -33,17 +37,21 @@ export function StockUpdateModal({ product, onUpdate, onClose }: StockUpdateModa
   };
 
   const handleSubmit = async () => {
-    if (changeAmount === 0) {
-      onClose();
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      await onUpdate(product.id, newQuantity, changeAmount);
+      // Update stock if changed
+      if (changeAmount !== 0) {
+        await onUpdate(product.id, newQuantity, changeAmount);
+      }
+      
+      // Update expiry date if changed
+      if (expiryDate !== (product.expiry_date || '')) {
+        await posApiClient.updateProduct(product.id, { expiry_date: expiryDate || null });
+      }
+      
       onClose();
     } catch (error) {
-      console.error('❌ Failed to update stock:', error);
+      console.error('❌ Failed to update:', error);
       setIsSubmitting(false);
     }
   };
@@ -213,6 +221,20 @@ export function StockUpdateModal({ product, onUpdate, onClose }: StockUpdateModa
             />
           </div>
 
+          {/* Expiry Date */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Expiry Date (Optional)
+            </label>
+            <input
+              type="date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">Leave empty if product has no expiry date</p>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex space-x-3">
             <button
@@ -223,7 +245,7 @@ export function StockUpdateModal({ product, onUpdate, onClose }: StockUpdateModa
             </button>
             <button
               onClick={handleSubmit}
-              disabled={changeAmount === 0 || isSubmitting}
+              disabled={!hasChanges || isSubmitting}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? 'Updating...' : 'Update Stock'}

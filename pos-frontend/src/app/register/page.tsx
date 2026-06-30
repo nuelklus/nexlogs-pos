@@ -1,8 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { NEXT_PUBLIC_POS_API_URL } from '@/lib/env';
+
+// Accounts API is at /api/accounts/, not /api/pos/accounts/
+const ACCOUNTS_API_URL = NEXT_PUBLIC_POS_API_URL.replace(/\/pos\/?$/, '');
 
 interface RegisterFormData {
   username: string;
@@ -12,6 +16,7 @@ interface RegisterFormData {
   phone_number: string;
   role: string;
   staff_role: string;
+  organization_id: number | null;
 }
 
 export default function RegisterPage() {
@@ -24,10 +29,39 @@ export default function RegisterPage() {
     phone_number: '',
     role: 'STAFF',
     staff_role: 'CASHIER',
+    organization_id: null,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if current user is an admin
+  useEffect(() => {
+    const token = localStorage.getItem('pos_access_token');
+    const userInfo = localStorage.getItem('pos_user_info');
+    console.log('userInfo',userInfo)
+    if (!token || !userInfo) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userInfo);
+      if (user.staff_role !== 'ADMIN') {
+        // Not an admin - redirect to POS page
+        router.push('/pos');
+        return;
+      }
+      setIsAdmin(true);
+    } catch {
+      router.push('/login');
+      return;
+    } finally {
+      setAuthChecking(false);
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,15 +69,37 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:8000/api/accounts/register/', formData);
+      const token = localStorage.getItem('pos_access_token');
+      const response = await axios.post(
+        `${ACCOUNTS_API_URL}/accounts/register/`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setSuccess(true);
       setTimeout(() => {
-        router.push('/login');
+        router.push('/pos');
       }, 2000);
     } catch (error: any) {
       console.error('❌ Registration failed:', error);
-      const errorMessage = error.response?.data?.error || error.response?.data?.detail || 'Registration failed. Please try again.';
-      setError(errorMessage);
+      if (error.response?.status === 401) {
+        setError('Your session has expired. Please log in again.');
+        setTimeout(() => router.push('/login'), 2000);
+      } else if (error.response?.status === 403) {
+        setError('Only admin users can register new staff members.');
+      } else {
+        const errorMessage =
+          error.response?.data?.error ||
+          error.response?.data?.detail ||
+          (error.response?.data && typeof error.response.data === 'object'
+            ? Object.values(error.response.data).flat().join(', ')
+            : 'Registration failed. Please try again.');
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -56,6 +112,31 @@ export default function RegisterPage() {
     }));
   };
 
+  // Show loading while checking auth
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not admin, show access denied (will redirect via useEffect)
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">Only admin users can register new staff members.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (success) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
@@ -63,7 +144,7 @@ export default function RegisterPage() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
             <div className="text-6xl mb-4">✅</div>
             <h2 className="text-2xl font-bold text-green-900 mb-2">Registration Successful!</h2>
-            <p className="text-green-700">Your account has been created. Redirecting to login...</p>
+            <p className="text-green-700">The staff account has been created. Redirecting to POS...</p>
           </div>
         </div>
       </div>
@@ -79,6 +160,9 @@ export default function RegisterPage() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Create a new staff account for the Point of Sale system
+          </p>
+          <p className="mt-1 text-center text-xs text-blue-600 font-medium">
+            Admin access required
           </p>
         </div>
         
@@ -236,12 +320,11 @@ export default function RegisterPage() {
           </div>
         </form>
 
-        {/* Back to Login */}
+        {/* Back to POS */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              Sign in here
+            <a href="/pos" className="font-medium text-blue-600 hover:text-blue-500">
+              ← Back to POS
             </a>
           </p>
         </div>

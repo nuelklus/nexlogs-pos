@@ -97,6 +97,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     primary_image = serializers.SerializerMethodField()
     stock_status = serializers.SerializerMethodField()
     discount_percentage = serializers.SerializerMethodField()
+    expiry_status = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
@@ -104,7 +105,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'sku', 'short_description',
             'price', 'compare_price', 'discount_percentage',
             'category', 'brand', 'primary_image', 'image_url', 'stock_status',
-            'stock_quantity', 'is_active', 'is_featured', 'created_at'
+            'stock_quantity', 'is_active', 'is_featured', 'expiry_date', 'expiry_status',
+            'created_at'
         ]
 
     def get_primary_image(self, obj):
@@ -130,6 +132,23 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_discount_percentage(self, obj):
         return obj.discount_percentage
 
+    def get_expiry_status(self, obj):
+        from django.utils import timezone
+        if not obj.expiry_date:
+            return {'status': 'no_expiry', 'message': 'No expiry date set'}
+        
+        today = timezone.now().date()
+        days_until_expiry = (obj.expiry_date - today).days
+        
+        if days_until_expiry < 0:
+            return {'status': 'expired', 'message': 'Expired', 'days_overdue': abs(days_until_expiry)}
+        elif days_until_expiry <= 30:
+            return {'status': 'critical', 'message': 'Expiring soon', 'days_remaining': days_until_expiry}
+        elif days_until_expiry <= 90:
+            return {'status': 'warning', 'message': 'Expiring within 3 months', 'days_remaining': days_until_expiry}
+        else:
+            return {'status': 'ok', 'message': 'Good', 'days_remaining': days_until_expiry}
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)
@@ -140,6 +159,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     stock_status = serializers.SerializerMethodField()
     discount_percentage = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
+    expiry_status = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
@@ -150,6 +170,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'category', 'brand', 'condition', 'weight', 'dimensions', 'image_url',
             'track_stock', 'stock_quantity', 'low_stock_threshold',
             'stock_status', 'is_active', 'is_featured', 'is_digital',
+            'expiry_date', 'expiry_status',
             'images', 'specifications', 'warehouse_stock', 'reviews',
             'average_rating', 'meta_title', 'meta_description',
             'created_at', 'updated_at'
@@ -174,6 +195,23 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             return round(sum(review.rating for review in reviews) / len(reviews), 1)
         return 0
 
+    def get_expiry_status(self, obj):
+        from django.utils import timezone
+        if not obj.expiry_date:
+            return {'status': 'no_expiry', 'message': 'No expiry date set'}
+        
+        today = timezone.now().date()
+        days_until_expiry = (obj.expiry_date - today).days
+        
+        if days_until_expiry < 0:
+            return {'status': 'expired', 'message': 'Expired', 'days_overdue': abs(days_until_expiry)}
+        elif days_until_expiry <= 30:
+            return {'status': 'critical', 'message': 'Expiring soon', 'days_remaining': days_until_expiry}
+        elif days_until_expiry <= 90:
+            return {'status': 'warning', 'message': 'Expiring within 3 months', 'days_remaining': days_until_expiry}
+        else:
+            return {'status': 'ok', 'message': 'Good', 'days_remaining': days_until_expiry}
+
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
     specifications = TechnicalSpecificationSerializer(many=True, required=False)
     image = serializers.ImageField(write_only=True, required=False, allow_null=True, use_url=False)
@@ -186,6 +224,7 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             'price', 'compare_price', 'cost_price',
             'condition', 'weight', 'dimensions', 'image_url', 'image',
             'track_stock', 'stock_quantity', 'low_stock_threshold',
+            'expiry_date',
             'is_active', 'is_featured', 'is_digital',
             'meta_title', 'meta_description',
             'specifications'

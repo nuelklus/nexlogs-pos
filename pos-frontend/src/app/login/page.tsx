@@ -24,9 +24,18 @@ export default function LoginPage() {
     try {
       await posApiClient.authenticate(formData);
       router.push('/pos');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Login failed:', error);
-      setError('Invalid credentials. Please try again.');
+      // Extract error message from API response
+      const errorMessage = error.response?.data?.error || 'Invalid credentials. Please try again.';
+      const subscriptionStatus = error.response?.data?.subscription_status;
+      const expiryDate = error.response?.data?.expiry_date;
+      
+      if (subscriptionStatus === 'expired') {
+        setError(`Subscription expired on ${expiryDate}. Please renew your subscription to continue.`);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -44,7 +53,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div>
           <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-gray-900 text-center">
-            Hardware POS Login
+            NEXLOGS POS Login
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Sign in to access the Point of Sale system
@@ -160,15 +169,6 @@ export default function LoginPage() {
           </details>
         </div>
 
-        {/* Register Link */}
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Need a staff account?{' '}
-            <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              Register here
-            </a>
-          </p>
-        </div>
       </div>
     </div>
   );

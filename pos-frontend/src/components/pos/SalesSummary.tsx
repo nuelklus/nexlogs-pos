@@ -18,7 +18,11 @@ interface SalesSummaryData {
   }>;
 }
 
-export default function SalesSummary() {
+interface SalesSummaryProps {
+  refreshKey?: number;
+}
+
+export default function SalesSummary({ refreshKey }: SalesSummaryProps) {
   const [summary, setSummary] = useState<SalesSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,7 +30,7 @@ export default function SalesSummary() {
 
   useEffect(() => {
     fetchSalesSummary();
-  }, [dateRange]);
+  }, [dateRange, refreshKey]);
 
   const fetchSalesSummary = async () => {
     try {
@@ -34,7 +38,13 @@ export default function SalesSummary() {
       setError('');
       const data = await posApiClient.getSalesSummary(dateRange);
       setSummary(data);
-    } catch (err) {
+    } catch (err: any) {
+      // Suppress 403 errors for restricted features (backend still logs them)
+      if (err.response?.status === 403) {
+        console.log('⚠️ Feature not available in current plan (403)');
+        setError('Feature not available in current plan');
+        return;
+      }
       console.error('Failed to fetch sales summary:', err);
       setError('Failed to load sales summary');
     } finally {

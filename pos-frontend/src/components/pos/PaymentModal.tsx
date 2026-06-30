@@ -11,9 +11,10 @@ interface PaymentModalProps {
   onClose: () => void;
   cartItems: CartItem[];
   totals: { subtotal: number; tax: number; total: number; itemCount: number };
+  onPaymentComplete?: () => void;
 }
 
-export function PaymentModal({ isOpen, onClose, cartItems, totals }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose, cartItems, totals, onPaymentComplete }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mobile'>('cash');
   const [amountPaid, setAmountPaid] = useState<string>(totals.total.toString());
   const [isProcessing, setIsProcessing] = useState(false);
@@ -186,7 +187,7 @@ export function PaymentModal({ isOpen, onClose, cartItems, totals }: PaymentModa
         <div class="separator"></div>
 
         <div class="footer">
-          <p>Thank You For Trusting Us</p>
+          <p>Thank You For Trusting Us!</p>
         </div>
         <div class="double-separator"></div>
       </body>
@@ -217,6 +218,10 @@ export function PaymentModal({ isOpen, onClose, cartItems, totals }: PaymentModa
     setShowReceiptConfirm(false);
     setLastTransaction(null);
     onClose();
+    // Trigger refresh callback
+    if (onPaymentComplete) {
+      onPaymentComplete();
+    }
   };
 
   const handleReceiptNo = () => {
@@ -225,6 +230,10 @@ export function PaymentModal({ isOpen, onClose, cartItems, totals }: PaymentModa
     setShowReceiptConfirm(false);
     setLastTransaction(null);
     onClose();
+    // Trigger refresh callback
+    if (onPaymentComplete) {
+      onPaymentComplete();
+    }
   };
 
   // Debug log

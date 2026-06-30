@@ -19,6 +19,8 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=32, unique=True, blank=True, null=True)
     staff_role = models.CharField(max_length=32, choices=StaffRole.choices, blank=True, null=True)
     store_id = models.CharField(max_length=100, default='main', blank=True, null=True, help_text="Store ID for STAFF users")
+    organization = models.ForeignKey('subscriptions.Organization', on_delete=models.CASCADE, null=True, blank=True, related_name='users')
+    is_staff = models.BooleanField(default=False)  # Required for Django admin access
 
     def clean(self):
         """Validate that staff_role is only set when role is STAFF"""
@@ -30,9 +32,6 @@ class User(AbstractUser):
 
     def is_pro_contractor(self) -> bool:
         return self.role == UserRole.PRO_CONTRACTOR
-
-    def is_staff(self) -> bool:
-        return self.role == UserRole.STAFF
 
     def is_admin(self) -> bool:
         return self.staff_role == StaffRole.ADMIN

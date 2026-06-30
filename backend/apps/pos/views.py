@@ -10,6 +10,8 @@ from django.db import transaction, models
 from apps.products.models import Product, StockSyncLog
 from apps.products.serializers import ProductListSerializer, ProductCreateUpdateSerializer
 from apps.accounts.models import StaffRole
+from apps.subscriptions.decorators import require_feature
+from apps.subscriptions.permissions import HasValidSubscription
 from .serializers import (
     POSProductSerializer, StockUpdateSerializer, BulkStockUpdateSerializer,
     StockSyncLogSerializer, LowStockAlertSerializer, TransactionSerializer,
@@ -22,7 +24,7 @@ import json
 class POSProductViewSet(viewsets.ModelViewSet):
     """POS-specific product endpoints"""
     serializer_class = ProductListSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasValidSubscription]
     
     def get_queryset(self):
         """Return active products with POS-specific fields"""
@@ -36,9 +38,15 @@ class POSProductViewSet(viewsets.ModelViewSet):
         store_id = request.query_params.get('store_id', 'main')
         queryset = queryset.filter(pos_store_id=store_id)
         
-        # Search by barcode if provided
+        # Search by barcode if provided (requires barcode_support feature)
         barcode = request.query_params.get('barcode')
         if barcode:
+            if hasattr(request.user, 'organization') and request.user.organization:
+                if not request.user.organization.has_feature('barcode_scanning'):
+                    return Response({
+                        'error': 'Barcode scanning is not available in your current plan',
+                        'current_plan': request.user.organization.current_plan.name
+                    }, status=403)
             queryset = queryset.filter(barcode__icontains=barcode)
         
         # Search by name/SKU if provided
@@ -58,6 +66,7 @@ class POSProductViewSet(viewsets.ModelViewSet):
         })
     
     @action(detail=False, methods=['post'], permission_classes=[CanUpdateStock])
+    @require_feature('stock_adjustments')
     def update_stock(self, request):
         """Update stock from POS with conflict resolution"""
         product_id = request.data.get('product_id')
@@ -146,6 +155,7 @@ class POSProductViewSet(viewsets.ModelViewSet):
             }, status=500)
     
     @action(detail=False, methods=['post'], permission_classes=[CanUpdateStock])
+    @require_feature('stock_adjustments')
     def bulk_stock_update(self, request):
         """Update multiple products stock at once"""
         updates = request.data.get('updates', [])
@@ -297,7 +307,7 @@ class POSProductViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, HasValidSubscription])
 def pos_health_check(request):
     """Health check endpoint for POS system"""
     return Response({
@@ -333,6 +343,17 @@ def pos_login(request):
         return Response({
             'error': 'Account is disabled'
         }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Check subscription status for users with organization
+    from apps.accounts.models import User
+    user = User.objects.select_related('organization').get(pk=user.pk)
+    if user.organization and not user.organization.is_subscription_active():
+        return Response({
+            'error': 'Organization subscription has expired',
+            'subscription_status': user.organization.subscription_status,
+            'expiry_date': str(user.organization.expiry_date)
+        }, status=status.HTTP_403_FORBIDDEN)
+    
     # ROLE CHECK
     if user.role != 'STAFF':
         return Response({
@@ -356,6 +377,7 @@ def pos_login(request):
             'last_name': user.last_name,
             'role': getattr(user, 'role', 'STAFF'),
             'staff_role': getattr(user, 'staff_role', None),
+            'organization_id':getattr(user.organization, "id", None)
         },
         'store_id': store_id,
         'expires_in': expires_in_seconds
@@ -399,7 +421,8 @@ def pos_logout(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, HasValidSubscription])
+@require_feature('low_stock_alerts')
 def low_stock_alerts(request):
     """Get products with low stock for POS"""
     store_id = request.query_params.get('store_id', 'main')
@@ -422,7 +445,38 @@ def low_stock_alerts(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, HasValidSubscription])
+def expiry_alerts(request):
+    """Get products expiring within 3 months"""
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    store_id = request.query_params.get('store_id', 'main')
+    months = int(request.query_params.get('months', 3))
+    
+    today = timezone.now().date()
+    expiry_date_threshold = today + timedelta(days=months * 30)
+    
+    # Get products with expiry dates within the threshold
+    products = Product.objects.filter(
+        is_active=True,
+        expiry_date__isnull=False,
+        expiry_date__lte=expiry_date_threshold
+    ).select_related('category', 'brand').order_by('expiry_date')
+    
+    serializer = ProductListSerializer(products, many=True)
+    
+    return Response({
+        'store_id': store_id,
+        'months': months,
+        'threshold_date': expiry_date_threshold.isoformat(),
+        'count': products.count(),
+        'products': serializer.data
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, HasValidSubscription])
 def transaction_history(request):
     """Get transaction history for current store"""
     try:
@@ -441,7 +495,8 @@ def transaction_history(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, HasValidSubscription])
+@require_feature('profit_loss_reports')
 def sales_summary(request):
     """Get sales summary statistics for current store"""
     try:
@@ -507,7 +562,7 @@ def sales_summary(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, HasValidSubscription])
 def create_transaction(request):
     """Create a new transaction (cash only)"""
     try:
@@ -578,7 +633,7 @@ def create_transaction(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, HasValidSubscription])
 def transaction_detail(request, transaction_id):
     """Get details of a specific transaction"""
     try:
@@ -604,7 +659,7 @@ def transaction_detail(request, transaction_id):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, HasValidSubscription])
 def create_refund(request):
     """Create a refund for a transaction"""
     try:

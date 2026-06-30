@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "apps.core",  # Add core app for health checks
     "apps.admin_dashboard",  # Add admin dashboard app
     "apps.pos",  # Add POS app for stock synchronization
+    "apps.subscriptions",  # Add subscriptions app for subscription management
     "whitenoise",  # Add WhiteNoise for static files
 ]
 
@@ -49,9 +50,11 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "apps.core.middleware.DatabaseRetryMiddleware",  # Add database retry middleware
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.subscriptions.middleware.SubscriptionMiddleware",  # Add subscription middleware
+    "apps.subscriptions.middleware.SubscriptionExpiryMiddleware",  # Add subscription expiry middleware
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]

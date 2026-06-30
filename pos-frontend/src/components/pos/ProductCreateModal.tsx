@@ -19,6 +19,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
     stock_quantity: '0',
     category: '',
     brand: '',
+    expiry_date: '',
   });
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
@@ -124,6 +125,7 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
       
       if (formData.barcode) backendFormData.append('barcode', formData.barcode);
       if (formData.description) backendFormData.append('description', formData.description);
+      if (formData.expiry_date) backendFormData.append('expiry_date', formData.expiry_date);
       
       // Add image file if provided
       if (imageFile) {
@@ -291,6 +293,20 @@ export function ProductCreateModal({ onClose, onSuccess }: ProductCreateModalPro
                     placeholder="0"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Expiry Date (Optional)
+                </label>
+                <input
+                  type="date"
+                  name="expiry_date"
+                  value={formData.expiry_date}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-base"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave empty if product has no expiry date</p>
               </div>
             </div>
 

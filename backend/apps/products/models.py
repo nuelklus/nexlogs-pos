@@ -95,6 +95,9 @@ class Product(models.Model):
     stock_quantity = models.PositiveIntegerField(default=0)
     low_stock_threshold = models.PositiveIntegerField(default=5)
     
+    # Product expiry
+    expiry_date = models.DateField(null=True, blank=True, help_text="Optional expiry date for the product")
+    
     # Status
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)

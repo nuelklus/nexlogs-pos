@@ -11,6 +11,7 @@ from django.core.files.storage import default_storage
 from django.conf import settings
 import os
 import uuid
+from apps.subscriptions.decorators import require_feature
 from .models import Product, Category, Brand, Warehouse, ProductReview
 from .serializers import (
     ProductListSerializer, ProductDetailSerializer, ProductCreateUpdateSerializer,
@@ -515,6 +516,8 @@ def product_brands(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@require_feature('multi_branch')
 def warehouses(request):
     """Get all warehouses"""
     warehouses = Warehouse.objects.filter(is_active=True)
