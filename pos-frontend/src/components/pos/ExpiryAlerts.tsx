@@ -149,7 +149,7 @@ export function ExpiryAlerts({ storeId }: ExpiryAlertsProps) {
                         {alert.name}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {alert.category_name} • {alert.brand_name}
+                        {alert.category?.name} • {alert.brand?.name}
                       </div>
                       <div className="text-xs font-medium mt-1">
                         {expiryStatus.message}
