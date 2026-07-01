@@ -140,7 +140,7 @@ SIMPLE_JWT = {
 # CORS Configuration - Comprehensive setup
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in os.getenv("DJANGO_CORS_ALLOWED_ORIGINS", 
-        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,https://dev.nexlogssolutions.com"
+        "http://localhost:3000,http://127.0.0.1:3000,https://ephritta.nexlogssolutions.com/"
     ).split(",") if o.strip()
 ]
 

@@ -154,19 +154,10 @@ ALLOWED_HOSTS = [
 
 # CORS (production)
 frontend_url = os.getenv('FRONTEND_URL', 'https://allshopsdepot.com')
-pos_frontend_url = os.getenv('POS_FRONTEND_URL', 'https://dev.nexlogssolutions.com')
+pos_frontend_url = os.getenv('POS_FRONTEND_URL', 'https://ephritta.nexlogssolutions.com/')
 CORS_ALLOWED_ORIGINS = [
     frontend_url,
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'https://allshopsdepot.com',
-    'https://www.allshopsdepot.com',
-    'https://localhost:3000',
-    # POS frontend origins
     pos_frontend_url,
-    'http://localhost:3001',
-    'http://127.0.0.1:3001',
-    'https://localhost:3001',
 ]
 
 # CSRF Trusted Origins (for secure form submission)
